@@ -1,0 +1,42 @@
+{
+  "name": "yuristim",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Yuristim modular serverless backend foundation",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @yuristim/api dev",
+    "build": "pnpm --filter @yuristim/api build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config apps/api/vitest.config.ts",
+    "test:integration": "vitest run --config apps/api/vitest.config.ts apps/api/tests/integration apps/api/tests/database",
+    "test:security": "vitest run --config apps/api/vitest.config.ts apps/api/tests/security",
+    "db:validate": "node scripts/validate-migrations.mjs",
+    "db:migrate:local": "pnpm --filter @yuristim/api db:migrate:local",
+    "db:migrate:staging": "pnpm --filter @yuristim/api db:migrate:staging",
+    "deploy:staging": "pnpm --filter @yuristim/api deploy:staging",
+    "types": "pnpm --filter @yuristim/api types",
+    "security:secrets": "node scripts/scan-secrets.mjs",
+    "audit:dependencies": "pnpm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.9.2",
+    "@cloudflare/workers-types": "5.20261127.1",
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.11",
+    "eslint": "10.15.0",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0",
+    "vitest": "5.1.2",
+    "wrangler": "4.168.0"
+  }
+}

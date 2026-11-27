@@ -1,0 +1,13 @@
+{
+  "name": "@yuristim/database",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@yuristim/config": "workspace:*",
+    "@yuristim/errors": "workspace:*"
+  }
+}
