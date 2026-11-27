@@ -50,6 +50,20 @@ jobs:
       - name: Validate migrations
         run: pnpm db:validate && pnpm db:migrate:local
 
+      - name: Smoke-test local development server
+        run: |
+          pnpm dev > /tmp/yuristim-wrangler.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8787/health | grep --quiet '"success":true'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/yuristim-wrangler.log
+          exit 1
+
       - name: Unit and integration tests
         run: pnpm test
 

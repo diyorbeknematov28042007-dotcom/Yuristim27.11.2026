@@ -301,11 +301,11 @@ pnpm db:migrate:staging
 pnpm deploy:staging
 ```
 
-`db:migrate:staging` and `deploy:staging` are valid Wrangler commands and require protected Cloudflare credentials. During this run the connected Cloudflare API was used instead of exposing a token to the shell. `pnpm dev` is intentionally long-running and was not left running after automated Worker-runtime tests.
+`db:migrate:staging` and `deploy:staging` are valid Wrangler commands and require protected Cloudflare credentials. During this run the connected Cloudflare API was used instead of exposing a token to the shell. The restricted executor cannot call Node.js `os.networkInterfaces()` (`uv_interface_addresses`, errno 1), so the long-running `pnpm dev` smoke check is executed on the GitHub Ubuntu runner; Worker-runtime tests use the same generated binding configuration locally.
 
 ### 14.7 CI/CD and security checks
 
-- `quality.yml` runs on pull requests and the Stage 03 branch: frozen install, formatting, ESLint, TypeScript, migration validation/local apply, all Worker-runtime tests, dry-run bundle, tracked-file secret scanning and high-severity production dependency audit.
+- `quality.yml` runs on pull requests and the Stage 03 branch: frozen install, formatting, ESLint, TypeScript, migration validation/local apply, a real `pnpm dev`/`/health` smoke check on the GitHub runner, all Worker-runtime tests, dry-run bundle, tracked-file secret scanning and high-severity production dependency audit.
 - `deploy-staging.yml` is manual-only, targets the GitHub `staging` environment, requires an explicit commit SHA and protected Cloudflare credentials, re-runs quality gates, applies remote migrations and deploys staging. Missing credentials fail the workflow. There is no production auto-deploy.
 - GitHub Actions have `contents: read` only, concurrency controls and timeouts. External setup actions are pinned to reviewed commit SHAs rather than moving tags.
 - No API key, Telegram token, Cloudflare token, session secret or personal data is committed. The previously disclosed Telegram token was not used.
