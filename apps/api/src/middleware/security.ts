@@ -67,7 +67,7 @@ export const corsMiddleware: MiddlewareHandler<AppBindings> = async (context, ne
     context.header("access-control-allow-origin", origin);
     context.header("vary", "Origin");
     context.header("access-control-allow-headers", "content-type, authorization, x-request-id");
-    context.header("access-control-allow-methods", "GET, HEAD, OPTIONS");
+    context.header("access-control-allow-methods", "GET, POST, PATCH, DELETE, HEAD, OPTIONS");
     context.header("access-control-max-age", "600");
   }
 

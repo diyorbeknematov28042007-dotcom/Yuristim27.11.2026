@@ -4,6 +4,10 @@ export type AuthenticatedPrincipal = {
   accountId: string;
   roles: readonly string[];
   sessionId: string;
+  accountStatus?: string;
+  csrfHash?: string | null;
+  platform?: "web" | "mini_app" | "bot" | "admin";
+  adminVerifiedAt?: string | null;
 };
 
 export type AuthenticationPort = {
@@ -56,7 +60,7 @@ export const isAllowedOrigin = (origin: string, allowlist: ReadonlySet<string>):
 export const secureResponseHeaders: Readonly<Record<string, string>> = {
   "cache-control": "no-store",
   "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
-  "cross-origin-opener-policy": "same-origin",
+  "cross-origin-opener-policy": "same-origin-allow-popups",
   "cross-origin-resource-policy": "same-site",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "referrer-policy": "no-referrer",
@@ -80,3 +84,9 @@ export type SessionManagerPort = {
 export type AdminTotpVerifierPort = {
   verify(accountId: string, code: string): Promise<boolean>;
 };
+
+export * from "./cookies";
+export * from "./crypto";
+export * from "./oidc";
+export * from "./telegram";
+export * from "./totp";

@@ -4,7 +4,6 @@ import { logger } from "@yuristim/logger";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
-import { defaultDenyAuthenticationMiddleware } from "./middleware/authentication";
 import { requestLoggingMiddleware } from "./middleware/logging";
 import { requestContextMiddleware } from "./middleware/request-context";
 import { runtimeConfigMiddleware } from "./middleware/runtime-config";
@@ -14,6 +13,9 @@ import {
   secureHeadersMiddleware,
 } from "./middleware/security";
 import { readinessHandler, systemRoutes } from "./routes/system";
+import { authRoutes, authenticatedAuthRoutes } from "./routes/auth";
+import { accountRoutes } from "./routes/account";
+import { adminRoutes } from "./routes/admin";
 import type { AppBindings } from "./types";
 
 export const app = new Hono<AppBindings>();
@@ -43,10 +45,10 @@ app.get("/ready", async (context) => {
 app.use("/api/*", runtimeConfigMiddleware);
 app.use("/api/*", corsMiddleware);
 app.route("/api/v1", systemRoutes);
-app.use("/api/v1/account", defaultDenyAuthenticationMiddleware);
-app.get("/api/v1/account", (context) =>
-  context.json(successResponse({ status: "authenticated" }, context.get("requestId"))),
-);
+app.route("/api/v1/auth", authRoutes);
+app.route("/api/v1/auth", authenticatedAuthRoutes);
+app.route("/api/v1/account", accountRoutes);
+app.route("/api/v1/admin", adminRoutes);
 
 const knownPaths = new Set([
   "/health",
@@ -57,6 +59,26 @@ const knownPaths = new Set([
   "/api/v1/services",
   "/api/v1/openapi.json",
   "/api/v1/account",
+  "/api/v1/auth/telegram/mini-app",
+  "/api/v1/auth/web/start",
+  "/api/v1/auth/web/callback",
+  "/api/v1/auth/telegram/bot/session",
+  "/api/v1/auth/recovery/telegram/issue",
+  "/api/v1/auth/recovery/telegram/complete",
+  "/api/v1/auth/logout",
+  "/api/v1/auth/logout-all",
+  "/api/v1/account/onboarding",
+  "/api/v1/account/profile",
+  "/api/v1/account/consents",
+  "/api/v1/account/sessions",
+  "/api/v1/account/security-events",
+  "/api/v1/account/export",
+  "/api/v1/account/deletion",
+  "/api/v1/account/financial-context",
+  "/api/v1/admin/auth/totp/setup",
+  "/api/v1/admin/auth/totp/confirm",
+  "/api/v1/admin/auth/totp/verify",
+  "/api/v1/admin/auth/context",
 ]);
 
 app.notFound((context) => {

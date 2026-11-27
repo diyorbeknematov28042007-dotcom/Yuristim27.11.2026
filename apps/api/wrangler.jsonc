@@ -8,12 +8,14 @@
   "preview_urls": false,
   "vars": {
     "APP_ENV": "staging",
-    "APP_VERSION": "0.3.0",
+    "APP_VERSION": "0.4.0",
     "API_VERSION": "v1",
     "PUBLIC_BASE_URL": "https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev",
     "CORS_ALLOWLIST": "",
     "REQUEST_TIMEOUT_MS": "5000",
     "MAX_REQUEST_BYTES": "1048576",
+    "SESSION_TTL_SECONDS": "2592000",
+    "TELEGRAM_AUTH_MAX_AGE_SECONDS": "300",
     "GIT_COMMIT_SHA": "unavailable",
   },
   "d1_databases": [

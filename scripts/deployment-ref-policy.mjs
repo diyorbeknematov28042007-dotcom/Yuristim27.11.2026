@@ -1,4 +1,4 @@
-export const APPROVED_DEPLOYMENT_BRANCH = "development/stage-03-backend-foundation";
+export const APPROVED_DEPLOYMENT_BRANCH = "development/stage-04-authentication-account";
 
 const fullCommitShaPattern = /^[0-9a-f]{40}$/;
 const repositoryPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;

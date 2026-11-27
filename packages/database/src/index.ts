@@ -1,50 +1,13 @@
 import type { FeatureFlagKey } from "@yuristim/config";
 import { AppError } from "@yuristim/errors";
+import { runD1Operation, type D1ExecutionPolicy } from "./execution";
 
 export type FeatureFlagSnapshot = Record<FeatureFlagKey, boolean>;
-
-export interface D1ExecutionPolicy {
-  timeoutMs: number;
-  signal: AbortSignal;
-}
 
 export interface FeatureFlagRepository {
   getAll(): Promise<FeatureFlagSnapshot>;
   isEnabled(key: FeatureFlagKey): Promise<boolean>;
 }
-
-export const runD1Operation = async <T>(
-  operationFactory: () => Promise<T>,
-  policy: D1ExecutionPolicy,
-): Promise<T> => {
-  if (!Number.isSafeInteger(policy.timeoutMs) || policy.timeoutMs <= 0) {
-    throw new AppError("SERVICE_UNAVAILABLE", "Database timeout policy is invalid");
-  }
-  if (policy.signal.aborted) {
-    throw new AppError("SERVICE_UNAVAILABLE", "Request was cancelled");
-  }
-
-  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  let abortListener: (() => void) | undefined;
-  const deadline = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(
-      () => reject(new AppError("SERVICE_UNAVAILABLE", "Database operation timed out")),
-      policy.timeoutMs,
-    );
-    abortListener = () => reject(new AppError("SERVICE_UNAVAILABLE", "Request was cancelled"));
-    policy.signal.addEventListener("abort", abortListener, { once: true });
-  });
-
-  // D1's Worker binding does not accept AbortSignal. This stops waiting after the
-  // deadline; an already-started platform query may still finish server-side.
-  const operation = Promise.resolve().then(operationFactory);
-  try {
-    return await Promise.race([operation, deadline]);
-  } finally {
-    if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
-    if (abortListener !== undefined) policy.signal.removeEventListener("abort", abortListener);
-  }
-};
 
 const falseFlagSnapshot = (): FeatureFlagSnapshot => ({
   ai_provider_execution: false,
@@ -55,6 +18,8 @@ const falseFlagSnapshot = (): FeatureFlagSnapshot => ({
   public_lawyer_registration: false,
   document_uploads: false,
   production_telegram_webhook: false,
+  account_export_execution: false,
+  account_deletion_execution: false,
 });
 
 export class D1FeatureFlagRepository implements FeatureFlagRepository {
@@ -123,3 +88,6 @@ export const findSystemSetting = async (
   );
   return row?.value_json ?? null;
 };
+
+export * from "./account";
+export * from "./execution";

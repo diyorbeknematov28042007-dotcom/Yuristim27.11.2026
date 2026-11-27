@@ -10,7 +10,18 @@ export default defineConfig({
       );
       return {
         wrangler: { configPath: path.resolve(import.meta.dirname, "wrangler.jsonc") },
-        miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+        miniflare: {
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            TELEGRAM_BOT_TOKEN: "synthetic-telegram-bot-token-for-tests-only",
+            BOT_ADAPTER_SECRET: "synthetic-bot-adapter-secret-for-tests-only",
+            AUTH_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            OWNER_TELEGRAM_ID: "900000001",
+            TELEGRAM_OIDC_CLIENT_ID: "synthetic-oidc-client",
+            TELEGRAM_OIDC_CLIENT_SECRET: "synthetic-oidc-secret",
+            TELEGRAM_OIDC_REDIRECT_URI: "https://example.test/auth/telegram/callback",
+          },
+        },
       };
     }),
   ],
