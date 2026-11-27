@@ -28,7 +28,7 @@
     },
   ],
   "triggers": {
-    "crons": ["0 19 * * SUN", "5 * * * *"],
+    "crons": ["0 19 * * SUN", "5 * * * *", "10 19 * * *"],
   },
   "observability": {
     "enabled": true,

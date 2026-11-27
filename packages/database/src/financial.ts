@@ -2011,7 +2011,7 @@ export class D1FinancialRepository {
     rateDate: string;
     microUzsPerUnit: number;
     verifiedAt: string;
-    actorAccountId: string;
+    actorAccountId: string | null;
   }): Promise<void> {
     assertSafePositive(input.microUzsPerUnit, "microUzsPerUnit");
     await runD1Operation(

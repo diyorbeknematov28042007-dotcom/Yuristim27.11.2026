@@ -15,6 +15,7 @@ import {
 import { readinessHandler, systemRoutes } from "./routes/system";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth";
 import { accountRoutes } from "./routes/account";
+import { CbuFxProvider } from "./adapters/cbu";
 import { adminRoutes } from "./routes/admin";
 import { financialRoutes } from "./routes/financial";
 import { adminFinancialRoutes } from "./routes/admin-financial";
@@ -162,6 +163,24 @@ const scheduled = async (controller: ScheduledController, env: Env): Promise<voi
     await repository.expireDueCredits(now.toISOString());
     await repository.processSubscriptions(now);
     await repository.processReferralRewards(now);
+    if (controller.cron === "10 19 * * *") {
+      try {
+        const rates = await new CbuFxProvider().fetchLatest(["USD", "EUR", "RUB"], now);
+        for (const rate of rates) {
+          await repository.recordFxRate({ ...rate, actorAccountId: null });
+        }
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            level: "error",
+            event: "cbu_fx_sync_failed",
+            timestamp: now.toISOString(),
+            environment: env.APP_ENV,
+            errorCategory: error instanceof AppError ? error.code : "SERVICE_UNAVAILABLE",
+          }),
+        );
+      }
+    }
     if (controller.cron === "0 19 * * SUN") {
       await repository.grantWeeklyToActiveAccounts(now);
     }
