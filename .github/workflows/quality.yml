@@ -7,6 +7,7 @@ on:
       - development/stage-03-backend-foundation
       - development/stage-04-authentication-account
       - development/stage-05-financial-core
+      - development/stage-06-design-system
 
 permissions:
   contents: read
