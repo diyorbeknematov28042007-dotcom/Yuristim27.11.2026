@@ -371,3 +371,87 @@ Audit correction evidence: GitHub Quality run #10 (`45945342119`) completed succ
 
 ### Stage 03 — Owner acceptance (27.11.2026)
 Project Manager accepted BF-001–004 within the documented audit scope; Owner explicitly approved Stage 03 and PR #1. GitHub merge succeeded: `f0c352a42797e2a36860477f7613c260290ff1ba`. Stage 03 closed; Stage 04 Authentication & Account next. Environment reviewer protection and manual deployment secrets remain unverified; no production deployment authorized. Preserve Stage 03 branch for existing deployment policy until a reviewed replacement is implemented.
+
+## 15. Development Stage 04 — Authentication & Account
+
+Status on 27.11.2026: **Partial — implementation and isolated V3 staging deployment complete; real Telegram login is blocked by missing credentials.** Stage 05 has not started.
+
+### 15.1 Authentication and account architecture
+
+- Telegram remains the only identity provider. A stable internal UUID is the account key; the verified numeric Telegram user ID is unique and Telegram username is metadata only.
+- Mini App login verifies `initData` server-side using Telegram's HMAC-SHA256 construction, validates `auth_date`, rejects duplicate fields and stores one-time replay hashes.
+- Website login uses Telegram OpenID Connect Authorization Code flow with PKCE S256, state cookie, nonce, RS256/JWKS signature verification and strict issuer/audience/time checks. The deprecated username-based Telegram Login Widget is not used.
+- The bot identity adapter accepts only timestamped HMAC-signed internal requests and rejects expired or replayed requests. Telegram recovery challenges are single-use, short-lived and issued only through this trusted adapter.
+- Web/Mini App sessions use 256-bit opaque tokens stored only as SHA-256 hashes, `Secure`/`HttpOnly`/`SameSite=Lax` cookies, double-submit CSRF tokens, 30-day sliding expiry, device metadata, individual revoke, logout and logout-all. Bot sessions use opaque bearer tokens.
+- All authentication routes use persistent D1 rate limits keyed by HMAC-pseudonymized client IP. IP and user-agent values are never stored in clear text. Missing credentials fail closed with `503`; protected endpoints remain default deny.
+- Admin access requires a verified Telegram account, an assigned RBAC role and TOTP. TOTP secrets are AES-256-GCM encrypted, codes have a ±1 step window, used steps cannot be replayed and admin elevation expires after 12 hours.
+
+Transport, authentication/security services, repository access and provider adapters remain separated inside the Stage 03 modular Worker. No additional Worker or paid Cloudflare service was created.
+
+### 15.2 API contract
+
+All routes remain below `/api/v1` and use the standard success/error envelope. The OpenAPI 3.1 document is available at `/api/v1/openapi.json`.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/auth/telegram/mini-app` | Verify Mini App `initData` and create the unified account/session |
+| POST | `/auth/web/start` | Create OIDC state, nonce and PKCE authorization request |
+| POST | `/auth/web/callback` | Exchange code and verify Telegram OIDC ID token |
+| POST | `/auth/telegram/bot/session` | Authenticate a trusted bot identity adapter request |
+| POST | `/auth/recovery/telegram/issue` | Issue a one-time recovery challenge through the bot adapter |
+| POST | `/auth/recovery/telegram/complete` | Consume recovery challenge and create a web session |
+| POST | `/auth/logout`, `/auth/logout-all` | Revoke current or all sessions |
+| GET | `/account` | Current unified profile and settings |
+| PATCH | `/account/onboarding` | Record “Sizni kim deb chaqirsak bo‘ladi?” |
+| PATCH | `/account/profile` | Update display name, locale and notification settings |
+| GET/POST | `/account/consents` | Read or record versioned consent |
+| GET/DELETE | `/account/sessions[/:sessionId]` | Device/session inventory and revocation |
+| GET | `/account/security-events` | Account security event history |
+| POST | `/account/export` | Record export request; execution is blocked until private storage exists |
+| POST | `/account/deletion` | Disable account, revoke sessions and record reversible deletion request foundation |
+| GET | `/account/financial-context` | Stage 05 account-status/ledger-eligibility contract |
+| POST | `/admin/auth/totp/setup`, `/confirm`, `/verify` | Admin TOTP lifecycle |
+| GET | `/admin/auth/context` | TOTP-gated RBAC roles and permissions |
+
+### 15.3 Database and configuration
+
+Remote and local D1 now track four ordered migrations. `0003_authentication_account.sql` adds strict account, settings, consent, role, session, challenge, replay, rate-limit, encrypted TOTP, append-only security-event and privacy-request tables with foreign keys, unique constraints and indexes. `0004_seed_authentication_flags.sql` adds disabled export/deletion execution flags. Staging verification found all four migration records and zero accounts; no real or synthetic user was written to staging.
+
+Required staging secrets are intentionally absent from source control: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OIDC_CLIENT_ID`, `TELEGRAM_OIDC_CLIENT_SECRET`, `TELEGRAM_OIDC_REDIRECT_URI`, `BOT_ADAPTER_SECRET`, `AUTH_ENCRYPTION_KEY` and optional `OWNER_TELEGRAM_ID`. They must be added through Cloudflare Secrets after credential provisioning. Placeholder-only local examples are provided. Previously disclosed tokens were not used.
+
+### 15.4 Security and tests
+
+The Stage 04 regression suite covers Mini App signature/freshness/replay, unified identity, bot HMAC, Telegram recovery one-time use, OIDC PKCE/state and RS256 claims, opaque sessions, CSRF, onboarding/profile/consent, session inventory, export/deletion foundations, account-state denial, RBAC, TOTP replay prevention, D1 constraints and the Stage 05 contract.
+
+Final local gates:
+
+| Check | Result |
+|---|---:|
+| `pnpm format:check` | passed |
+| `pnpm lint` | passed |
+| `pnpm typecheck` | passed |
+| `pnpm db:validate` | passed, 4 ordered files |
+| `pnpm db:migrate:local` | passed, 4 migrations |
+| `pnpm test` | 42 passed, 0 failed, 0 skipped (38 Worker + 4 deployment-policy tests) |
+| `pnpm build` | passed, Wrangler dry-run bundle |
+| `pnpm security:secrets` | passed, no known secret pattern |
+| `pnpm audit --prod --audit-level=high` | passed, no known vulnerability |
+
+The manual staging deployment policy now authorizes only full SHAs on `development/stage-04-authentication-account`, keeps the GitHub `staging` environment approval boundary, uses minimal permissions and never interpolates dispatch input directly into shell commands. Production auto-deploy remains absent.
+
+### 15.5 Staging deployment and blockers
+
+The existing isolated `yuristim-api-v3-staging` Worker was deployed with application version `0.4.0` and Git commit `0f73d1fc14123090941391767038ae93dc09897c`; deployment ID `3aabd465a6464c64a9707b70a86f4ce6`. The existing `yuristim-db-v3-staging` received migrations 0003–0004. Observability remains enabled, query strings are now redacted, and all legacy Workers/D1 databases were left untouched.
+
+Real checks at <https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev> returned: `/health` `200`, D1-backed `/ready` `200`, `/api/v1/version` `200` with `0.4.0` and the deployed SHA, `/api/v1/config/public` `200`, protected `/api/v1/account` `401`, OpenAPI `200` with 22 paths, and Mini App login `503` because authentication secrets are deliberately not configured. This is fail-closed behavior, not a successful real Telegram login.
+
+Remaining blockers:
+
+1. Owner must provision fresh Telegram bot and OIDC credentials, set the Cloudflare secrets, register the exact web redirect URI and provide the verified Owner Telegram ID before real Mini App/web/bot/admin login can be tested.
+2. R2 is still unavailable, so export execution remains `blocked_storage`; no billing-dependent service was enabled.
+3. Final irreversible deletion/anonymization, legal retention rules and export artifact generation remain later privacy/legal work; Stage 04 only supplies the safe request and immediate account-disable foundation.
+4. GitHub staging required-reviewer settings and Actions Cloudflare secrets remain Owner-verification items. Direct connected-API deployment is verified.
+
+### 15.6 Stage 05 readiness
+
+`AccountFinancialContext` and `/api/v1/account/financial-context` expose only internal account ID, status and ledger eligibility. This lets Stage 05 enforce active-account and no-deletion-pending rules without depending on Telegram identity or session tables. No ledger, credits, balance or payment logic was started.
