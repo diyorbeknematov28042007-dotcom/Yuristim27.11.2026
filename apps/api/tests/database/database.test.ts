@@ -28,6 +28,16 @@ describe("D1 foundation migrations", () => {
         "privacy_requests",
         "security_events",
         "system_settings",
+        "financial_wallets",
+        "financial_operations",
+        "credit_buckets",
+        "financial_ledger_entries",
+        "credit_reservations",
+        "subscription_contracts",
+        "pricing_versions",
+        "promo_codes",
+        "referrals",
+        "payment_intents",
       ]),
     );
   });
@@ -41,6 +51,8 @@ describe("D1 foundation migrations", () => {
       "0002_seed_feature_flags.sql",
       "0003_authentication_account.sql",
       "0004_seed_authentication_flags.sql",
+      "0005_financial_core.sql",
+      "0006_seed_financial_flags.sql",
     ]);
   });
 
@@ -121,6 +133,37 @@ describe("D1 foundation migrations", () => {
     await expect(
       env.DB.prepare("UPDATE audit_events SET action = 'changed' WHERE id = ?1")
         .bind("event-append-only")
+        .run(),
+    ).rejects.toThrow(/append-only/);
+  });
+
+  it("keeps financial ledger entries append-only", async () => {
+    await env.DB.prepare("INSERT INTO accounts (id, telegram_user_id) VALUES (?1, ?2)")
+      .bind("financial-append-account", 830000099)
+      .run();
+    await env.DB.prepare(
+      "INSERT INTO financial_operations (id, account_id, operation_type, idempotency_scope, idempotency_key, request_hash) VALUES (?1, ?2, 'grant', 'test', 'test-key', ?3)",
+    )
+      .bind("financial-append-operation", "financial-append-account", "0".repeat(64))
+      .run();
+    await env.DB.prepare(
+      "INSERT INTO credit_buckets (id, account_id, source_type, source_reference, initial_microcredits, available_microcredits) VALUES (?1, ?2, 'admin_bonus', 'test', 10, 10)",
+    )
+      .bind("financial-append-bucket", "financial-append-account")
+      .run();
+    await env.DB.prepare(
+      "INSERT INTO financial_ledger_entries (id, operation_id, account_id, bucket_id, entry_type, available_delta, description) VALUES (?1, ?2, ?3, ?4, 'grant', 10, 'test grant')",
+    )
+      .bind(
+        "financial-append-entry",
+        "financial-append-operation",
+        "financial-append-account",
+        "financial-append-bucket",
+      )
+      .run();
+    await expect(
+      env.DB.prepare("DELETE FROM financial_ledger_entries WHERE id = ?1")
+        .bind("financial-append-entry")
         .run(),
     ).rejects.toThrow(/append-only/);
   });

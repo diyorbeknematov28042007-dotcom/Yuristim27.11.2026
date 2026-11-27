@@ -11,6 +11,10 @@ export const featureFlagKeys = [
   "production_telegram_webhook",
   "account_export_execution",
   "account_deletion_execution",
+  "financial_reservations",
+  "promo_redemption",
+  "referral_rewards",
+  "weekly_credit_grants",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];

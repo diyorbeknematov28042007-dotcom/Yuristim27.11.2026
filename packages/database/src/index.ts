@@ -20,6 +20,10 @@ const falseFlagSnapshot = (): FeatureFlagSnapshot => ({
   production_telegram_webhook: false,
   account_export_execution: false,
   account_deletion_execution: false,
+  financial_reservations: false,
+  promo_redemption: false,
+  referral_rewards: false,
+  weekly_credit_grants: false,
 });
 
 export class D1FeatureFlagRepository implements FeatureFlagRepository {
@@ -91,3 +95,4 @@ export const findSystemSetting = async (
 
 export * from "./account";
 export * from "./execution";
+export * from "./financial";

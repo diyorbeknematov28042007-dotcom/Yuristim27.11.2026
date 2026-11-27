@@ -16,6 +16,9 @@ import { readinessHandler, systemRoutes } from "./routes/system";
 import { authRoutes, authenticatedAuthRoutes } from "./routes/auth";
 import { accountRoutes } from "./routes/account";
 import { adminRoutes } from "./routes/admin";
+import { financialRoutes } from "./routes/financial";
+import { adminFinancialRoutes } from "./routes/admin-financial";
+import { D1FinancialRepository } from "@yuristim/database";
 import type { AppBindings } from "./types";
 
 export const app = new Hono<AppBindings>();
@@ -49,6 +52,8 @@ app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/auth", authenticatedAuthRoutes);
 app.route("/api/v1/account", accountRoutes);
 app.route("/api/v1/admin", adminRoutes);
+app.route("/api/v1/financial", financialRoutes);
+app.route("/api/v1/admin/financial", adminFinancialRoutes);
 
 const knownPaths = new Set([
   "/health",
@@ -79,6 +84,25 @@ const knownPaths = new Set([
   "/api/v1/admin/auth/totp/confirm",
   "/api/v1/admin/auth/totp/verify",
   "/api/v1/admin/auth/context",
+  "/api/v1/financial/balance",
+  "/api/v1/financial/ledger",
+  "/api/v1/financial/subscription",
+  "/api/v1/financial/costs/estimate",
+  "/api/v1/financial/reservations",
+  "/api/v1/financial/promos/redeem",
+  "/api/v1/financial/referrals/code",
+  "/api/v1/financial/referrals/apply",
+  "/api/v1/financial/payments/intents",
+  "/api/v1/admin/financial/pricing/versions",
+  "/api/v1/admin/financial/grants",
+  "/api/v1/admin/financial/subscriptions/grant",
+  "/api/v1/admin/financial/promos",
+  "/api/v1/admin/financial/compensations",
+  "/api/v1/admin/financial/budgets",
+  "/api/v1/admin/financial/fx-rates",
+  "/api/v1/admin/financial/referrals/process",
+  "/api/v1/admin/financial/reconciliation",
+  "/api/v1/admin/financial/analytics",
 ]);
 
 app.notFound((context) => {
@@ -125,4 +149,29 @@ app.onError((error, context) => {
   );
 });
 
-export default app;
+const scheduled = async (controller: ScheduledController, env: Env): Promise<void> => {
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), 14 * 60 * 1_000);
+  const repository = new D1FinancialRepository(env.DB, {
+    timeoutMs: 30_000,
+    signal: abortController.signal,
+  });
+  try {
+    const now = new Date(controller.scheduledTime);
+    await repository.releaseExpiredReservations(now);
+    await repository.expireDueCredits(now.toISOString());
+    await repository.processSubscriptions(now);
+    await repository.processReferralRewards(now);
+    if (controller.cron === "0 19 * * SUN") {
+      await repository.grantWeeklyToActiveAccounts(now);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+export default {
+  fetch: (request: Request, env: Env, executionContext: ExecutionContext) =>
+    app.fetch(request, env, executionContext),
+  scheduled,
+} satisfies ExportedHandler<Env>;
