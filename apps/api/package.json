@@ -1,12 +1,12 @@
 {
   "name": "@yuristim/api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --config wrangler.jsonc",
     "build": "wrangler deploy --dry-run --outdir ../../dist/api --config wrangler.jsonc",
-    "types": "wrangler types --config wrangler.jsonc",
+    "types": "wrangler types --include-runtime false --config wrangler.jsonc",
     "db:migrate:local": "wrangler d1 migrations apply DB --local --config wrangler.jsonc",
     "db:migrate:staging": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc",
     "deploy:staging": "wrangler deploy --config wrangler.jsonc"
