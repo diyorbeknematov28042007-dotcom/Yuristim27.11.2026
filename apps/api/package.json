@@ -1,0 +1,26 @@
+{
+  "name": "@yuristim/api",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.jsonc",
+    "build": "wrangler deploy --dry-run --outdir ../../dist/api --config wrangler.jsonc",
+    "types": "wrangler types --config wrangler.jsonc",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local --config wrangler.jsonc",
+    "db:migrate:staging": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc",
+    "deploy:staging": "wrangler deploy --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@yuristim/config": "workspace:*",
+    "@yuristim/contracts": "workspace:*",
+    "@yuristim/core": "workspace:*",
+    "@yuristim/database": "workspace:*",
+    "@yuristim/errors": "workspace:*",
+    "@yuristim/logger": "workspace:*",
+    "@yuristim/security": "workspace:*",
+    "@yuristim/validation": "workspace:*",
+    "hono": "4.13.23",
+    "zod": "4.6.7"
+  }
+}
