@@ -23,7 +23,13 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
     languageOptions: {
       ...tseslint.configs.disableTypeChecked.languageOptions,
-      globals: { console: "readonly" },
+      globals: {
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+      },
     },
   },
 );

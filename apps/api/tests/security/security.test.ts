@@ -51,6 +51,31 @@ describe("security foundation", () => {
     });
   });
 
+  it("rejects an oversized streamed body without Content-Length", async () => {
+    const chunk = new Uint8Array(64 * 1024);
+    let emitted = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (emitted >= 17) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(chunk);
+        emitted += 1;
+      },
+    });
+
+    const response = await SELF.fetch("https://example.test/api/v1/status", {
+      method: "POST",
+      body,
+    });
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({
+      success: false,
+      error: { code: "PAYLOAD_TOO_LARGE" },
+    });
+  });
+
   it("does not echo sensitive request values", async () => {
     const secret = "Bearer stage-secret-value";
     const response = await SELF.fetch("https://example.test/api/v1/missing?token=private", {

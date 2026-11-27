@@ -3,6 +3,11 @@ import { findSystemSetting } from "@yuristim/database";
 import { describe, expect, it } from "vitest";
 
 describe("D1 foundation migrations", () => {
+  const executionPolicy = () => ({
+    timeoutMs: 5_000,
+    signal: new AbortController().signal,
+  });
+
   it("creates the expected tables in a fresh database", async () => {
     const tables = await env.DB.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
@@ -55,8 +60,8 @@ describe("D1 foundation migrations", () => {
 
   it("uses prepared statements for untrusted keys", async () => {
     const malicious = "timezone' OR 1=1 --";
-    expect(await findSystemSetting(env.DB, malicious)).toBeNull();
-    expect(await findSystemSetting(env.DB, "timezone")).toBe('"Asia/Tashkent"');
+    expect(await findSystemSetting(env.DB, malicious, executionPolicy())).toBeNull();
+    expect(await findSystemSetting(env.DB, "timezone", executionPolicy())).toBe('"Asia/Tashkent"');
   });
 
   it("keeps audit events append-only", async () => {

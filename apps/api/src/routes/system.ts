@@ -7,7 +7,6 @@ import { z } from "zod";
 import { validateInput } from "@yuristim/validation";
 import type { AppBindings } from "../types";
 import { openApiDocument } from "../services/openapi";
-import { withTimeout } from "../services/timeout";
 
 const localeQuerySchema = z.object({ locale: z.enum(["uz", "ru", "en"]).default("uz") });
 
@@ -45,7 +44,12 @@ systemRoutes.get("/version", (context) => {
 });
 
 systemRoutes.get("/config/public", async (context) => {
-  const flags = await new D1FeatureFlagRepository(context.env.DB).getAll();
+  const config = context.get("config");
+  if (config === undefined) throw new AppError("SERVICE_UNAVAILABLE", "Configuration unavailable");
+  const flags = await new D1FeatureFlagRepository(context.env.DB, {
+    timeoutMs: config.REQUEST_TIMEOUT_MS,
+    signal: context.req.raw.signal,
+  }).getAll();
   return context.json(
     successResponse(
       {
@@ -64,7 +68,12 @@ systemRoutes.get("/config/public", async (context) => {
 
 systemRoutes.get("/services", async (context) => {
   const query = validateInput(localeQuerySchema, context.req.query());
-  const flags = await new D1FeatureFlagRepository(context.env.DB).getAll();
+  const config = context.get("config");
+  if (config === undefined) throw new AppError("SERVICE_UNAVAILABLE", "Configuration unavailable");
+  const flags = await new D1FeatureFlagRepository(context.env.DB, {
+    timeoutMs: config.REQUEST_TIMEOUT_MS,
+    signal: context.req.raw.signal,
+  }).getAll();
   return context.json(
     successResponse(
       {
@@ -108,4 +117,4 @@ export const readinessHandler = async (
   database: D1Database,
   timeoutMs: number,
   signal: AbortSignal,
-): Promise<void> => withTimeout(assertDatabaseReady(database), timeoutMs, signal);
+): Promise<void> => assertDatabaseReady(database, { timeoutMs, signal });

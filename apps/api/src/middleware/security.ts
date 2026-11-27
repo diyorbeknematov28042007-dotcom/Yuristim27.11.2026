@@ -19,6 +19,39 @@ export const requestSizeMiddleware: MiddlewareHandler<AppBindings> = async (cont
     }
     if (parsed > maximum) throw new AppError("PAYLOAD_TOO_LARGE", "Request payload is too large");
   }
+
+  const requestBody = context.req.raw.body;
+  if (requestBody !== null) {
+    const reader = requestBody.getReader();
+    const chunks: Uint8Array[] = [];
+    let bytesRead = 0;
+
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bytesRead += value.byteLength;
+        if (bytesRead > maximum) {
+          await reader.cancel().catch(() => undefined);
+          throw new AppError("PAYLOAD_TOO_LARGE", "Request payload is too large");
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    const headers = new Headers(context.req.raw.headers);
+    headers.delete("content-length");
+    headers.delete("transfer-encoding");
+    const replayBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+    context.req.raw = new Request(context.req.raw, { body: replayBody, headers });
+  }
   await next();
 };
 
