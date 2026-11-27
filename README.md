@@ -1,6 +1,6 @@
 # Yuristim — Project Source
 
-> 27.11.2026 | Asosiy loyiha hujjati | Rejalashtirish tasdiqlangan, implementatsiya tekshirilmagan.
+> 28.11.2026 | Asosiy loyiha hujjati | Stage 03–05 Owner tomonidan tasdiqlangan; Stage 06 Owner auditi kutilmoqda.
 
 Yuristim — O‘zbekiston uchun AI yordamidagi huquqiy ekotizim: veb-sayt, Telegram Mini App va Telegram bot, alohida web Admin Panel. Ushbu README yagona loyiha spetsifikatsiyasi va qarorlar reyestri. Loyiha egasi yakuniy qarorlarni tasdiqlaydi. Quyidagi matn tasdiqlangan qarorlarning konspekti, to‘liq suhbat stenogrammasi emas. 10.02–10.16 faqat umumiy darajada tasdiqlangan; batafsil texnik yechimlar implementatsiyada tekshiriladi.
 
@@ -156,14 +156,14 @@ AI pipeline: authenticate → authorize → model selection → estimate/reserve
 Detailed schema and endpoint contracts not yet approved or implemented. Required domains: users/sessions/RBAC, conversations/messages/memory, documents/files, lawyers/verifications/reviews/complaints, research/jobs/sources/projects, legal documents/versions/articles, calculators/reminders, credit buckets/ledger/reservations/subscriptions/costs/promos/referrals, notifications/support/audit/config. Design atomic finance and idempotency first. Version APIs, validate inputs, authorize every resource, safe errors, pagination, rate limits, no client-trusted balances. Exact tables/routes require audit and tests.
 
 ## 11. Roadmap
-All implementation items below pending verification; planning is not deployed software.
+Har bir bosqich faqat uning bo‘limidagi real test va deployment dalillari doirasida bajarilgan hisoblanadi.
 - [x] Product decisions 001–089 and core architecture 090; remaining architecture topics approved in principle.
 - [x] New canonical repository selected: Yuristim27.11.2026.
-- [ ] Repository/infrastructure audit and old migration inventory.
-- [ ] Backend foundation and isolated staging.
-- [ ] Telegram auth/account/session.
-- [ ] Financial Core and ledger tests.
-- [ ] Design System and asset audit.
+- [x] Repository/infrastructure audit and old migration inventory.
+- [x] Backend foundation and isolated staging.
+- [x] Telegram auth/account/session foundation; real credential integrations deferred.
+- [x] Financial Core and ledger tests; real payments remain disabled.
+- [x] Design System implementation; original asset archive audit remains blocked.
 - [ ] AI Lite/Pro and legal knowledge/RAG.
 - [ ] Lawyer directory and verification.
 - [ ] Research.
@@ -179,7 +179,7 @@ All implementation items below pending verification; planning is not deployed so
 - API keys to be connected later; no secrets in Git. Rotate any previously shared bot token before real use.
 - Payments disabled until Owner/legal/payment provider approval.
 - Uzbekistan personal-data localization, retention, provider terms, official source access, legal formulas, cloud limits/prices, model IDs, document processing feasibility require verification.
-- Sticker/animation/design archives not audited; color token conflict №079/086 unresolved.
+- Original logo/sticker/animation archives repository yoki ish muhitida topilmadi; ularni uydirmasdan Asset Registry ichida `missing` holatida saqlash kerak. №079/086 dark-token ziddiyati Owner qarorigacha №079 foydasiga vaqtincha hal qilingan.
 - No claim of WCAG compliance, RPO/RTO, actual margin or production readiness before tests.
 
 ## 12. Ishlash qoidalari
@@ -521,3 +521,74 @@ Stage 06 Design System can consume the documented balance, subscription, estimat
 
 ### Stage 05 — Owner acceptance
 Owner approved Financial Core implementation and deferred remaining integrations. PR #3 merged into main: `b4e452f19dad9212226b128fda8dc2c98e230226`. Real Telegram-authenticated financial flows, provider pricing, payments/refunds/disputes/revenue recognition, production accounting/tax/reconciliation/recovery remain pending. Payments remain disabled. Stage 06 Design System may begin. Comprehensive audit remains deferred to integration/testing per Owner direction.
+
+## 17. Development Stage 06 — Design System
+
+Status on 28.11.2026: **Partial; implementation and automated gates pass, Owner audit and original asset/browser visual audit remain pending.** No product frontend, backend business rule, database, Cloudflare resource or production deployment was added or changed.
+
+### 17.1 Architecture and packages
+
+- `@yuristim/design-tokens` is the framework-neutral source for approved brand/light/dark/semantic colors, typography, spacing, radii, shadows, motion durations, breakpoints and layout dimensions. CSS custom properties expose the same source to every client.
+- `@yuristim/ui` is the shared React layer for Web, Telegram Mini App and Admin Panel. It uses typed composition, Radix primitives, Lucide outline icons, Motion adapters and Tailwind CSS utilities without embedding account, AI or Financial Core business logic.
+- `@yuristim/design-preview` is a Vite component catalog instead of a full product application. It presents tokens, Light/Dark/System controls, UZ/RU/EN switching, responsive navigation, components, feedback states and asset availability in one review surface.
+- Bot clients remain native; the package exports the same UZ/RU/EN brand and feedback translations for reuse. Platform-specific behavior is isolated behind theme, Telegram viewport, haptic and asset adapters.
+
+The package version is `0.6.0`. Public imports are intentionally routed through each package root; product applications must not import internal component files.
+
+### 17.2 Implemented component and platform contracts
+
+| Area | Implemented contracts |
+|---|---|
+| Primitives | Button (36/44/52 and icon), Input, Textarea, SearchField, Card |
+| Interaction | Composer, Modal, Sheet, Dropdown, Switch, Tabs, SegmentedControl |
+| Navigation | Sidebar 280/72, mobile sheet max 340/85%, Header 56/64, Lite/Pro selector, local navigation, profile control |
+| Layout | Mobile-first 4/8/12-column grid, AppShell, skip link, responsive padding/gutters, safe-area and Telegram viewport wrappers |
+| Theme | Light/Dark/System, local device preference, `prefers-color-scheme`, Telegram theme adapter, no-flash boot script, reduced-motion-safe transition |
+| Localization | Typed Uzbek/Russian/English common, navigation, theme, model and feedback strings |
+| Motion | Approved duration tokens, CSS/Motion reduced-motion policy and optional Telegram haptic adapter |
+| Feedback | Loading, skeleton, empty, error, offline, success, insufficient credits, access denied and maintenance |
+| Assets | Kebab-case/duplicate/source validation, explicit availability and accessible logo fallback; missing assets are never fabricated |
+
+Only `Lite` and `Pro` are exposed as model labels. There is no global bottom navigation. CSS safe-area variables and 44 px touch targets are applied at the shared layer. Focus-visible styles, keyboard-compatible Radix behavior, labels, live regions and a skip link support the WCAG 2.2 AA target.
+
+### 17.3 Decisions made during implementation
+
+1. The custom Vite catalog was selected as the Storybook-equivalent preview because it adds no separate documentation tree and exercises the exact production package/build path.
+2. №079 is the provisional canonical dark palette. The conflicting №086 prototype palette is not mixed into the implementation and still requires explicit Owner resolution.
+3. Theme preference is device-local by design; it is not written to the account API. System is the default and an inline bootstrap script prevents an initial wrong-theme flash.
+4. The original logo, sticker and animation archives were not present in the repository or supplied workspace. The implementation creates validation/registration boundaries and a safe text fallback, but does not redraw, rename or claim those assets.
+5. Financial values and availability remain server-authoritative. Feedback components accept already-authorized display data and contain no credit calculation or feature-flag bypass.
+
+### 17.4 Development and quality evidence
+
+Run `pnpm design:dev` for the catalog, `pnpm design:build` for its production bundle and `pnpm design:preview` to serve the built catalog. Root `pnpm build` now builds both the unchanged API Worker bundle and the catalog.
+
+Final local gates:
+
+| Check | Result |
+|---|---:|
+| `pnpm format:check` | passed |
+| `pnpm lint` | passed |
+| `pnpm typecheck` | passed |
+| `pnpm db:validate && pnpm db:migrate:local` | passed; 6 ordered migrations, no new migration |
+| `pnpm test:api` | passed: 60 tests |
+| `pnpm test:design` | passed: 12 tests in 4 files |
+| `pnpm test:workflow` | passed: 4 tests |
+| `pnpm build` | passed; Worker dry run + catalog build (390.90 kB JS, 124.30 kB gzip; 35.14 kB CSS, 7.36 kB gzip) |
+| `pnpm security:secrets` | passed; 126 tracked files scanned |
+| `pnpm audit --prod --audit-level=high` | passed; no known vulnerability |
+
+Design tests cover exact tokens and primary-theme contrast, component state/keyboard behavior, theme resolution, translation parity, asset validation, representative axe-core rules, skip-link/grid/safe-area contracts and the absence of a global bottom navigation. The axe `color-contrast` browser rule is disabled only in jsdom; equivalent approved token pairs have programmatic contrast assertions.
+
+### 17.5 Preview, blockers and Stage 07 readiness
+
+The catalog production build is functional and can be reviewed locally at `pnpm design:dev`. It shows the emerald token palette, component states, Lite/Pro navigation, Light/Dark/System and UZ/RU/EN controls, responsive shell and all feedback patterns. No public/staging preview was deployed because Stage 06 does not authorize new Cloudflare resources or a production product frontend.
+
+Remaining blockers:
+
+1. Owner must supply the original logo/sticker/animation archives for hash/source/licence, transparency, dimensions, weight, naming, reduced-motion and visual-quality audit before they can be marked available.
+2. Owner must choose the final dark palette between №079 and №086; №079 remains the explicit provisional source.
+3. The current execution image has a broken Chromium installation, so real-browser screenshot, Playwright, 200% zoom/400% reflow and cross-browser screen-reader audits were not run. Automated DOM, axe, responsive-contract and production-build tests passed, but this is not presented as a completed visual accessibility audit.
+4. Inter font files are not bundled; non-Apple clients use installed Inter when available and fall back to the approved system stack. Font licensing/loading can be finalized with the first product frontend.
+
+Stage 07 can consume tokens, shared components, `Lite`/`Pro` model selection, composer, loading/progress/error/insufficient-credit states and reduced-motion adapters without owning UI primitives. AI provider execution, conversation state, streaming and Financial Core settlement were not started. Stage 07 must not start and this branch must not merge until Owner review approves the draft PR.
