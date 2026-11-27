@@ -594,3 +594,7 @@ Remaining blockers:
 4. Inter font files are not bundled; non-Apple clients use installed Inter when available and fall back to the approved system stack. Font licensing/loading can be finalized with the first product frontend.
 
 Stage 07 can consume tokens, shared components, `Lite`/`Pro` model selection, composer, loading/progress/error/insufficient-credit states and reduced-motion adapters without owning UI primitives. AI provider execution, conversation state, streaming and Financial Core settlement were not started. Stage 07 must not start and this branch must not merge until Owner review approves the draft PR.
+
+
+### Stage 06 — Owner acceptance
+Owner approved Design System implementation. PR #4 merged into main: `94ff9ef82ca962c8d777ab401b13f9edb0f7f372`. Owner confirmed decision 079 dark palette as authoritative over conflicting 086 examples. Asset ownership/licence provenance remains pending and must be resolved before public distribution; Inter font integration deferred to Stage 12; real browser accessibility audit deferred to Stage 15; no public component preview deployment. Stage 07 Yuristim AI may begin. Comprehensive audit remains deferred per Owner direction.
