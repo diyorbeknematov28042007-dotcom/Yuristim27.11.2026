@@ -194,3 +194,14 @@ All implementation items below pending verification; planning is not deployed so
 
 ### Changelog
 - 27.11.2026: Decisions 001–090 summarized; 10.02–10.16 marked general approval; new repository selected; Owner requests all documentation in README.md only.
+
+
+## 13. Development Stage 02 — Infrastructure Audit (27.11.2026)
+Status: initial read-only inventory completed; functional/security audit pending.
+- New repo: main only, README.md only, no Actions runs at audit time. Old migration branch and PR #21 returned 404 at previously referenced repository; recovery/access not confirmed.
+- Cloudflare: 5 existing Workers, 4 D1 databases. Existing Workers and databases preserved; no deployment or resource changes.
+- Workers: bot staging, P1 API staging, P1 frontend staging, KDF benchmark, V2 staging. All five have zero Cron schedules. Existing deployment history is not evidence of functional readiness.
+- D1 application table counts (excluding Cloudflare internal table): P1 staging 17, V2 staging 31, production 3, staging 3. Read-only schema-name inventory; no personal records read. Legacy marketplace, Founding100 and special-login tables require compatibility review; no deletion authorized.
+- R2 disabled (HTTP 403, code 10042; enable in Dashboard). KV, Queues, Workflows, AI Gateway, Pages list empty; no Vectorize index found.
+- Next recommendation: isolated new staging foundation, preserve legacy resources; assess source recovery and schema compatibility before reuse. Do not use real personal data until localization/security requirements verified. R2 activation required before document storage; not required for initial health/API scaffold. Rotate previously exposed bot token before use.
+- Pending: full source recovery, endpoint tests, schema constraints/migrations, billing/limits, DNS/WAF, backups/restore, deployment provenance, secrets validity and legal localization. No production readiness claim.
