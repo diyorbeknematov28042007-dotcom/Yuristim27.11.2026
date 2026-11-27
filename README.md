@@ -455,3 +455,7 @@ Remaining blockers:
 ### 15.6 Stage 05 readiness
 
 `AccountFinancialContext` and `/api/v1/account/financial-context` expose only internal account ID, status and ledger eligibility. This lets Stage 05 enforce active-account and no-deletion-pending rules without depending on Telegram identity or session tables. No ledger, credits, balance or payment logic was started.
+
+
+### Stage 04 — Owner acceptance
+Owner approved Stage 04 implementation with outstanding integrations deferred. PR #2 merged into main: `f647ac69d6908cadde1b7b8a1f123b5f0af667f5`. Real Telegram authentication, R2 export, final deletion/retention and deployment environment verification remain pending; no production authorization. Stage 05 Financial Core may begin. Per Owner direction, use concise stage reports and defer comprehensive audit to integration/testing, without deferring critical security fixes.
