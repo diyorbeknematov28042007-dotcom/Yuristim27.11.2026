@@ -6,6 +6,7 @@ import {
   SegmentedControl,
   createAssetRegistry,
   dictionaries,
+  requiredAssetRegistry,
   resolveTheme,
 } from "../src";
 
@@ -71,5 +72,18 @@ describe("shared UI behavior", () => {
     expect(() =>
       createAssetRegistry([{ id: "logo", kind: "logo", status: "available", alt: "Yuristim" }]),
     ).toThrow(/source/u);
+    expect(() =>
+      createAssetRegistry([
+        { id: "legacy-login", kind: "sticker", status: "missing", alt: "", policy: "prohibited" },
+      ]),
+    ).toThrow(/policy/u);
+  });
+
+  it("registers the supplied logo and performant stickers without enabling legacy login", () => {
+    expect(requiredAssetRegistry.get("yuristim-logo")?.status).toBe("available");
+    expect(requiredAssetRegistry.get("yuristim-logo")?.bytes).toBeLessThanOrEqual(100_000);
+    expect(requiredAssetRegistry.get("special-login")?.policy).toBe("prohibited");
+    expect(requiredAssetRegistry.get("secure-login")?.policy).toBe("prohibited");
+    expect(requiredAssetRegistry.get("motion-system")?.status).toBe("available");
   });
 });

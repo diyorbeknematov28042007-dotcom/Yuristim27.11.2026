@@ -47,6 +47,8 @@ import {
   Switch,
   Tabs,
   Textarea,
+  YuristimLogo,
+  requiredAssetRegistry,
   useLocale,
   useTheme,
   type YuristimModel,
@@ -174,9 +176,9 @@ export const Catalog = () => {
           Light/Dark/System, UZ/RU/EN, WCAG 2.2 AA maqsadi va Telegram Mini App safe area
           adapterlari.
         </p>
-        <div className="rounded-[var(--yr-radius-md)] border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          Original logo, sticker va animation fayllari repositoryda yo‘q. Preview ularni o‘ylab
-          topmaydi va matn fallbackidan foydalanadi.
+        <div className="rounded-[var(--yr-radius-md)] border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
+          Original logo va texnik auditdan o‘tgan sticker pack qo‘shildi. Legacy parol/maxsus kirish
+          assetlari №050 bo‘yicha ko‘rsatiladi, ammo foydalanishdan bloklangan.
         </div>
       </div>
 
@@ -207,6 +209,43 @@ export const Catalog = () => {
                 <code className="text-xs text-[var(--yr-color-muted)]">{hex}</code>
               </Card>
             ))}
+          </ResponsiveGrid>
+        </Section>
+
+        <Section id="assets" title="Original logo va Asset Registry">
+          <Card className="flex flex-col items-center justify-center gap-3 p-8">
+            <YuristimLogo className="size-32" width={128} height={128} />
+            <strong>Original Yuristim logotipi</strong>
+            <span className="text-sm text-[var(--yr-color-muted)]">WebP 512 · PNG fallback</span>
+          </Card>
+          <ResponsiveGrid>
+            {[...requiredAssetRegistry.values()]
+              .filter((asset) => asset.kind === "sticker")
+              .map((asset) => (
+                <Card key={asset.id} className="col-span-2 md:col-span-2 lg:col-span-3">
+                  <picture>
+                    <source srcSet={asset.source} type="image/webp" />
+                    <img
+                      src={asset.fallbackSource}
+                      alt={asset.alt}
+                      width={128}
+                      height={128}
+                      loading="lazy"
+                      className="mx-auto aspect-square size-32 object-contain"
+                    />
+                  </picture>
+                  <strong className="mt-3 block text-sm">{asset.id}</strong>
+                  <span
+                    className={
+                      asset.policy === "prohibited"
+                        ? "text-xs font-semibold text-[var(--yr-color-error)]"
+                        : "text-xs text-[var(--yr-color-muted)]"
+                    }
+                  >
+                    {asset.policy}
+                  </span>
+                </Card>
+              ))}
           </ResponsiveGrid>
         </Section>
 

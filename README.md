@@ -116,7 +116,7 @@ Formulalar va stavkalar amaldagi qonunchilik bo‘yicha tekshirilmaguncha produc
 - №079: Brand #00865F, #005C40, #DDF5E9, #F0FAF5. Light #FFFFFF/#F5F6F8/#101114/#606878/#E5E7EB. Dark #101312/#171B19/#202523/#F5F7F6/#A1ABA6/#303934/#153D2E/#34C997/#23A77C. Semantic success #00865F, warning #A16207, error #DC2626, info #2563EB, Pro #7C3AED.
 - №080: Apple native system font where available, Inter otherwise/admin; display36/44 700, H1 28/36 700, H2 24/32 600, H3 20/28 600, title18/24 600, body16/24 400, button16/24 500, secondary14/20, caption12/16. Docs Times New Roman or suitable alternative. No SF Pro redistribution.
 - №081: React TS Tailwind shared accessible components; button36/44/52, touch44, radius4/8/12/16/24/full, spacing4/8/12/16/20/24/32/40/48/64; mobile padding16. Inputs/cards/sheets/dialogs/segments/all states.
-- №082: Original logo unchanged, Lucide outline SVG16/20/24/32/48 stroke1.8, sticker transparent1:1 SVG/WebP/PNG, master1024/display64–160, WebP target≤100KB, lazy, kebab-case, alt/decorative, Asset Registry. ZIP audit pending.
+- №082: Original logo unchanged, Lucide outline SVG16/20/24/32/48 stroke1.8, sticker transparent1:1 SVG/WebP/PNG, master1024/display64–160, WebP target≤100KB, lazy, kebab-case, alt/decorative, Asset Registry. Supplied ZIP technical audit passed in Stage 06; ownership/licence confirmation remains pending.
 - №083: Motion button100ms/icon150/switch200/model200/tooltip150/sidebar280/page300/sheet300/modal250/success500/splash400; CSS/Motion/Lottie, haptic supported, Reduce Motion, real progress, target60FPS, assets≤150KB guideline.
 - №084: Lite/Pro labels; sidebar logo/AI/Lawyers/Research/Interactive/recent/history/profile; default AI, no global bottom nav. Mobile overlay85% max340, desktop280/72, header56/64. Lawyers Katalog/Sevimlilar/Kabinet; Research Izlanish/Loyihalar/Kutubxona/Tarix; Tools Xizmatlar/Tarix/Eslatmalar. Bot /start /menu /new /balance /profile /help /cancel. Authenticated deep links.
 - №085: Mobile-first breakpoints320–479/480–767/768–1023/1024–1279/1280–1535/1536+, grids4/8/12, padding16/24/32, gutters12/16/24, safe area, keyboard, orientation, desktop split editor/research.
@@ -163,7 +163,7 @@ Har bir bosqich faqat uning bo‘limidagi real test va deployment dalillari doir
 - [x] Backend foundation and isolated staging.
 - [x] Telegram auth/account/session foundation; real credential integrations deferred.
 - [x] Financial Core and ledger tests; real payments remain disabled.
-- [x] Design System implementation; original asset archive audit remains blocked.
+- [x] Design System implementation and supplied asset technical audit; ownership/licence and browser visual audit remain pending.
 - [ ] AI Lite/Pro and legal knowledge/RAG.
 - [ ] Lawyer directory and verification.
 - [ ] Research.
@@ -179,7 +179,7 @@ Har bir bosqich faqat uning bo‘limidagi real test va deployment dalillari doir
 - API keys to be connected later; no secrets in Git. Rotate any previously shared bot token before real use.
 - Payments disabled until Owner/legal/payment provider approval.
 - Uzbekistan personal-data localization, retention, provider terms, official source access, legal formulas, cloud limits/prices, model IDs, document processing feasibility require verification.
-- Original logo/sticker/animation archives repository yoki ish muhitida topilmadi; ularni uydirmasdan Asset Registry ichida `missing` holatida saqlash kerak. №079/086 dark-token ziddiyati Owner qarorigacha №079 foydasiga vaqtincha hal qilingan.
+- Supplied logo/sticker pack technical audit passed; ownership/licence provenance still requires Owner confirmation. No separate animation binary pack was found because approved motion is code-native. Historical mockups conflict with №050/078/084 and are reference-only. №079/086 dark-token conflict is provisionally resolved in favor of №079 until Owner review.
 - No claim of WCAG compliance, RPO/RTO, actual margin or production readiness before tests.
 
 ## 12. Ishlash qoidalari
@@ -524,7 +524,7 @@ Owner approved Financial Core implementation and deferred remaining integrations
 
 ## 17. Development Stage 06 — Design System
 
-Status on 28.11.2026: **Partial; implementation and automated gates pass, Owner audit and original asset/browser visual audit remain pending.** No product frontend, backend business rule, database, Cloudflare resource or production deployment was added or changed.
+Status on 28.11.2026: **Partial; implementation, supplied asset technical audit and automated gates pass; Owner provenance/dark-token decisions and real-browser visual audit remain pending.** No product frontend, backend business rule, database, Cloudflare resource or production deployment was added or changed.
 
 ### 17.1 Architecture and packages
 
@@ -547,7 +547,7 @@ The package version is `0.6.0`. Public imports are intentionally routed through 
 | Localization | Typed Uzbek/Russian/English common, navigation, theme, model and feedback strings |
 | Motion | Approved duration tokens, CSS/Motion reduced-motion policy and optional Telegram haptic adapter |
 | Feedback | Loading, skeleton, empty, error, offline, success, insufficient credits, access denied and maintenance |
-| Assets | Kebab-case/duplicate/source validation, explicit availability and accessible logo fallback; missing assets are never fabricated |
+| Assets | Original logo source, 512 WebP/256 PNG sticker variants, kebab-case/duplicate/source/weight validation and policy-aware Asset Registry |
 
 Only `Lite` and `Pro` are exposed as model labels. There is no global bottom navigation. CSS safe-area variables and 44 px touch targets are applied at the shared layer. Focus-visible styles, keyboard-compatible Radix behavior, labels, live regions and a skip link support the WCAG 2.2 AA target.
 
@@ -556,8 +556,10 @@ Only `Lite` and `Pro` are exposed as model labels. There is no global bottom nav
 1. The custom Vite catalog was selected as the Storybook-equivalent preview because it adds no separate documentation tree and exercises the exact production package/build path.
 2. №079 is the provisional canonical dark palette. The conflicting №086 prototype palette is not mixed into the implementation and still requires explicit Owner resolution.
 3. Theme preference is device-local by design; it is not written to the account API. System is the default and an inline bootstrap script prevents an initial wrong-theme flash.
-4. The original logo, sticker and animation archives were not present in the repository or supplied workspace. The implementation creates validation/registration boundaries and a safe text fallback, but does not redraw, rename or claim those assets.
-5. Financial values and availability remain server-authoritative. Feedback components accept already-authorized display data and contain no credit calculation or feature-flag bypass.
+4. The supplied sticker archive (`SHA-256 f943995b…`) contains the original logo plus 11 stickers. The exact original JPEG (`SHA-256 2a61ce2f…`), a transparent 1024 PNG, runtime 512 WebP and 256 PNG fallbacks were retained. All 512 WebP files are 1:1, alpha-enabled and ≤100 KB. `special-login` and `secure-login` remain packaged for provenance but are policy-prohibited because №050 permits Telegram-only authentication.
+5. The supplied historical mockup archive (`SHA-256 1d3531b4…`) was not imported into runtime code: it contains fake device chrome, `Chat/Work` labels and password/six-digit login flows that conflict with №050/078/084. It served only as a visual reference.
+6. No separate animation binary archive was available or required. Approved animation behavior is implemented code-first through CSS/Motion duration and reduced-motion contracts; no animation was fabricated.
+7. Financial values and availability remain server-authoritative. Feedback components accept already-authorized display data and contain no credit calculation or feature-flag bypass.
 
 ### 17.4 Development and quality evidence
 
@@ -572,21 +574,21 @@ Final local gates:
 | `pnpm typecheck` | passed |
 | `pnpm db:validate && pnpm db:migrate:local` | passed; 6 ordered migrations, no new migration |
 | `pnpm test:api` | passed: 60 tests |
-| `pnpm test:design` | passed: 12 tests in 4 files |
+| `pnpm test:design` | passed: 15 tests in 5 files |
 | `pnpm test:workflow` | passed: 4 tests |
-| `pnpm build` | passed; Worker dry run + catalog build (390.90 kB JS, 124.30 kB gzip; 35.14 kB CSS, 7.36 kB gzip) |
-| `pnpm security:secrets` | passed; 126 tracked files scanned |
+| `pnpm build` | passed; Worker dry run + catalog build (397.65 kB JS, 125.92 kB gzip; 35.79 kB CSS, 7.45 kB gzip) |
+| `pnpm security:secrets` | passed; 153 tracked files scanned |
 | `pnpm audit --prod --audit-level=high` | passed; no known vulnerability |
 
 Design tests cover exact tokens and primary-theme contrast, component state/keyboard behavior, theme resolution, translation parity, asset validation, representative axe-core rules, skip-link/grid/safe-area contracts and the absence of a global bottom navigation. The axe `color-contrast` browser rule is disabled only in jsdom; equivalent approved token pairs have programmatic contrast assertions.
 
 ### 17.5 Preview, blockers and Stage 07 readiness
 
-The catalog production build is functional and can be reviewed locally at `pnpm design:dev`. It shows the emerald token palette, component states, Lite/Pro navigation, Light/Dark/System and UZ/RU/EN controls, responsive shell and all feedback patterns. No public/staging preview was deployed because Stage 06 does not authorize new Cloudflare resources or a production product frontend.
+The catalog production build is functional and can be reviewed locally at `pnpm design:dev`. It shows the original logo, audited sticker gallery and policy labels alongside the emerald token palette, component states, Lite/Pro navigation, Light/Dark/System and UZ/RU/EN controls, responsive shell and all feedback patterns. No public/staging preview was deployed because Stage 06 does not authorize new Cloudflare resources or a production product frontend.
 
 Remaining blockers:
 
-1. Owner must supply the original logo/sticker/animation archives for hash/source/licence, transparency, dimensions, weight, naming, reduced-motion and visual-quality audit before they can be marked available.
+1. Owner must confirm original logo/sticker ownership and licence provenance. Technical dimensions, alpha, file weight, naming and archive hashes are verified.
 2. Owner must choose the final dark palette between №079 and №086; №079 remains the explicit provisional source.
 3. The current execution image has a broken Chromium installation, so real-browser screenshot, Playwright, 200% zoom/400% reflow and cross-browser screen-reader audits were not run. Automated DOM, axe, responsive-contract and production-build tests passed, but this is not presented as a completed visual accessibility audit.
 4. Inter font files are not bundled; non-Apple clients use installed Inter when available and fall back to the approved system stack. Font licensing/loading can be finalized with the first product frontend.
