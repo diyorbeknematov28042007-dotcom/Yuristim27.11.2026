@@ -459,3 +459,61 @@ Remaining blockers:
 
 ### Stage 04 — Owner acceptance
 Owner approved Stage 04 implementation with outstanding integrations deferred. PR #2 merged into main: `f647ac69d6908cadde1b7b8a1f123b5f0af667f5`. Real Telegram authentication, R2 export, final deletion/retention and deployment environment verification remain pending; no production authorization. Stage 05 Financial Core may begin. Per Owner direction, use concise stage reports and defer comprehensive audit to integration/testing, without deferring critical security fixes.
+
+## 16. Development Stage 05 — Financial Core
+
+Status on 28.11.2026: **Completed within the authorized Stage 05 scope; Owner audit is pending.** Real payments, credit purchases, Pro purchases and AI provider execution remain disabled by design. Stage 06 has not started.
+
+### 16.1 Financial architecture and invariants
+
+- `AccountFinancialContext` is the account boundary: only active, ledger-eligible Stage 04 accounts may enter Financial Core.
+- One append-only ledger and typed credit buckets implement weekly, compensation, promo/referral, subscription, purchased and admin bonus credit sources. The spending order is weekly → compensation → promo/referral/bonus → subscription → purchased, then earliest expiry.
+- One credit is represented as `1,000,000` integer microcredits. Provider and direct infrastructure cost is converted to UZS and multiplied by four before reservation; floating-point balances are never stored.
+- Reservation, top-up, settlement, release, expiry and grants use D1 transactional batches, prepared statements, database constraints and operation-scoped idempotency. Bucket accounting enforces `initial = available + reserved + consumed + expired`, so negative or duplicated credit cannot be committed.
+- Valid reservations survive source-bucket expiry. When such a reservation settles or expires, unused credit from an already-expired bucket moves to expired credit rather than becoming spendable again.
+- Weekly `2,000` credits are granted at Monday 00:00 Asia/Tashkent (`0 19 * * SUN` UTC) exactly once per account/week. Hourly maintenance releases abandoned reservations and processes expiry, subscriptions and eligible referrals.
+- The official CBU JSON adapter verifies USD/EUR/RUB rate, nominal and effective date daily at 00:10 Asia/Tashkent. Provider failure is safely logged and the last verified rate is used with an explicit stale-rate marker.
+
+### 16.2 Engines and API
+
+Implemented engines: Credit/Ledger, Weekly Credits, Free/Pro Subscription, Cost/Pricing, Reservation, Promo/Trial, Referral, Compensation, Budget, disabled Payment Adapter foundation, Reconciliation and Financial Analytics. Pro is modelled as 49,000 UZS per 30 days with a 70,000-credit bucket; early renewal is queued without overlapping the active term. Admin/trial grants never create revenue.
+
+User routes below `/api/v1/financial` include balance, ledger history, subscription state, cost estimate, reservation create/read/settle/cancel, promo redemption, referral code/apply and the disabled payment-intent boundary. Admin routes below `/api/v1/admin/financial` manage versioned pricing, controlled grants/trials, promos, linked compensation, budgets, verified FX rates, referral activity, reconciliation and analytics. All routes are present in the OpenAPI 3.1 contract.
+
+Financial administration requires authenticated RBAC plus current TOTP elevation. Pricing, FX and budget changes are Owner-only. Payment intent creation is server-side feature-disabled; no request header or client flag can enable payments or purchases.
+
+### 16.3 Database and staging configuration
+
+`0005_financial_core.sql` and `0006_seed_financial_flags.sql` are applied locally and to the existing isolated `yuristim-db-v3-staging`. Remote `d1_migrations` contains six ordered records and 20 Financial Core tables. Append-only ledger triggers, foreign keys, unique idempotency constraints, reservation guards, indexes and strict tables are active.
+
+Financial reservation, promo redemption, reviewed referral reward and weekly grant flags are enabled. `real_payments`, `credit_purchases` and `pro_subscription_purchases` remain disabled. No account, fake payment, fake revenue or fake provider price was inserted into staging. Current USD/EUR/RUB rows were seeded only from the official CBU response and future rows are refreshed by the daily cron.
+
+The existing V3 Worker was updated; no new Worker, D1, R2, KV, Queue, Vectorize or paid service was created. Legacy Cloudflare resources were not addressed by any write operation.
+
+### 16.4 Tests and deployment evidence
+
+Final local gates:
+
+| Check | Result |
+|---|---:|
+| `pnpm format:check` | passed |
+| `pnpm lint` | passed |
+| `pnpm typecheck` | passed |
+| `pnpm db:validate` | passed, 6 ordered migrations |
+| `pnpm test` | passed: 60 Worker tests + 4 deployment-policy tests, 0 failed/skipped |
+| `pnpm build` | passed, Wrangler dry-run bundle |
+| `pnpm security:secrets` | passed, 92 tracked files scanned |
+| `pnpm audit --prod --audit-level=high` | passed, no known vulnerability |
+
+The suite covers parallel reservation overspend, idempotent grants/settlement/compensation, bucket expiry while reserved, abandoned release, spending order, promo capacity races, referral 3-operation + 72-hour eligibility, Pro renewal, budget stop, CBU conversion/fallback, reconciliation, append-only ledger and disabled real payments. GitHub Actions Quality run #19 (`46072813060`) passed for commit `36469101d90eb632114d3f572fdca6e57a526553`.
+
+V3 staging deployment `4fead69f24b64f4e9b137a00e7916300` serves application `0.5.0` at <https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev>. Real checks returned `/health` 200, D1-backed `/ready` 200, `/api/v1/version` 200 with the deployed commit, `/api/v1/services` 200 with Financial Core available and payments disabled, OpenAPI 200 with 28 paths, protected financial routes 401 without credentials, unknown route 404, unsupported method 405 and rejected CORS 403.
+
+### 16.5 Remaining integration boundaries and Stage 06 readiness
+
+1. Deferred Stage 04 Telegram credentials are still absent, so authenticated financial transactions were verified in workerd integration tests but not through a real Telegram-authenticated staging session. The deployed boundary fails closed with 401/503 as applicable.
+2. No AI/provider contract currently supplies real usage or provider prices. Therefore no fake production pricing version was seeded; Stage 07+ integrations must publish an Owner-approved version before real reservations are created.
+3. Real payment provider verification, webhooks, refunds/disputes and revenue recognition remain disabled until a later Owner-approved payment integration. The lifecycle and idempotent adapter boundary are ready.
+4. Production reconciliation policy, accounting/tax review, D1 restore drills and operator alert routing require Owner/legal review before real money or production users.
+
+Stage 06 Design System can consume the documented balance, subscription, estimate and reservation contracts without embedding financial rules in the client. Stage 06 must not start and this branch must not merge until Owner review approves the draft PR.

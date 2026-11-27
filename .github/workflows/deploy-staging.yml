@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: "Commit SHA from the approved Stage 04 branch"
+        description: "Commit SHA from the approved Stage 05 branch"
         required: true
         type: string
 
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout trusted deployment policy
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: development/stage-04-authentication-account
+          ref: development/stage-05-financial-core
           persist-credentials: false
 
       - name: Validate commit and approved branch history

@@ -38,8 +38,8 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Yuristim Backend API",
-    version: "0.4.0",
-    description: "Development Stage 04 Telegram-only authentication and account contract.",
+    version: "0.5.0",
+    description: "Development Stage 05 financial core, authentication and account contract.",
   },
   servers: [
     {
@@ -250,6 +250,58 @@ export const openApiDocument = {
           "200": response("Role and permission context", { type: "object" }),
           "403": errorResponse("Admin role and recent TOTP verification required"),
         },
+      },
+    },
+    "/api/v1/financial/balance": {
+      get: {
+        operationId: "getCreditBalance",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Server-authoritative credit balance", { type: "object" }) },
+      },
+    },
+    "/api/v1/financial/ledger": {
+      get: {
+        operationId: "listFinancialLedger",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Append-only ledger entries", { type: "object" }) },
+      },
+    },
+    "/api/v1/financial/costs/estimate": {
+      post: {
+        operationId: "estimateFinancialCost",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "200": response("Versioned server-side cost estimate", { type: "object" }),
+          "503": errorResponse("Cost is unknown or restricted"),
+        },
+      },
+    },
+    "/api/v1/financial/reservations": {
+      post: {
+        operationId: "reserveCredits",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "header", name: "Idempotency-Key", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "201": response("Credits reserved atomically", { type: "object" }),
+          "402": errorResponse("Insufficient credits"),
+          "409": errorResponse("Budget or idempotency conflict"),
+        },
+      },
+    },
+    "/api/v1/financial/payments/intents": {
+      post: {
+        operationId: "createPaymentIntent",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "403": errorResponse("Real payments are disabled") },
+      },
+    },
+    "/api/v1/admin/financial/reconciliation": {
+      post: {
+        operationId: "runFinancialReconciliation",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "201": response("Financial reconciliation result", { type: "object" }) },
       },
     },
   },

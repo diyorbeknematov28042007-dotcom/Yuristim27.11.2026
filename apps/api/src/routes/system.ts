@@ -19,7 +19,7 @@ systemRoutes.get("/status", (context) => {
     successResponse(
       {
         platform: "yuristim",
-        stage: "backend_foundation",
+        stage: "financial_core",
         status: "operational",
         environment: config.APP_ENV,
       },
@@ -59,6 +59,11 @@ systemRoutes.get("/config/public", async (context) => {
           researchExecution: flags.research_execution,
           realPayments: flags.real_payments,
           documentUploads: flags.document_uploads,
+          financialReservations: flags.financial_reservations,
+          promoRedemption: flags.promo_redemption,
+          referralRewards: flags.referral_rewards,
+          creditPurchases: flags.credit_purchases,
+          proSubscriptionPurchases: flags.pro_subscription_purchases,
         },
       },
       context.get("requestId"),
@@ -80,6 +85,7 @@ systemRoutes.get("/services", async (context) => {
         locale: query.locale,
         services: [
           { id: "foundation", name: "Backend Foundation", status: "available" },
+          { id: "financial", name: "Financial Core", status: "available" },
           {
             id: "yuristim-ai",
             name: "Yuristim AI",

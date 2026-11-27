@@ -1,4 +1,4 @@
-import { hmac, signTelegramMiniAppTestData, toHex } from "@yuristim/security";
+import { generateTotpCode, hmac, signTelegramMiniAppTestData, toHex } from "@yuristim/security";
 
 export const testBotToken = "synthetic-telegram-bot-token-for-tests-only";
 export const testBotAdapterSecret = "synthetic-bot-adapter-secret-for-tests-only";
@@ -59,3 +59,25 @@ export const bearerHeaders = (accessToken: string): HeadersInit => ({
   authorization: `Bearer ${accessToken}`,
   "content-type": "application/json",
 });
+
+export const createOwnerSession = async (
+  fetcher: Fetcher,
+): Promise<{ accessToken: string; accountId: string; headers: HeadersInit }> => {
+  const session = await createBotSession(fetcher, "900000001");
+  const headers = bearerHeaders(session.accessToken);
+  const setup = await fetcher.fetch("https://example.test/api/v1/admin/auth/totp/setup", {
+    method: "POST",
+    headers,
+  });
+  if (setup.status !== 201) throw new Error(`TOTP setup failed: ${await setup.text()}`);
+  const payload = await setup.json<{ data: { secret: string } }>();
+  const step = Math.floor(Date.now() / 30_000);
+  const code = await generateTotpCode(payload.data.secret, step);
+  const confirm = await fetcher.fetch("https://example.test/api/v1/admin/auth/totp/confirm", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ code }),
+  });
+  if (confirm.status !== 200) throw new Error(`TOTP confirm failed: ${await confirm.text()}`);
+  return { ...session, headers };
+};

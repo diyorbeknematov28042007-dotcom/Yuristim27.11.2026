@@ -41,7 +41,7 @@ describe("API gateway public endpoints", () => {
     expect(response.status).toBe(200);
     expect(await json(response)).toMatchObject({
       success: true,
-      data: { application: "0.4.0", api: "v1" },
+      data: { application: "0.5.0", api: "v1" },
     });
   });
 
@@ -59,7 +59,7 @@ describe("API gateway public endpoints", () => {
     expect(response.status).toBe(200);
     expect(await json(response)).toMatchObject({
       success: true,
-      data: { openapi: "3.1.0", info: { version: "0.4.0" } },
+      data: { openapi: "3.1.0", info: { version: "0.5.0" } },
     });
   });
 
