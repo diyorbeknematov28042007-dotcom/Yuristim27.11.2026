@@ -205,3 +205,152 @@ Status: initial read-only inventory completed; functional/security audit pending
 - R2 disabled (HTTP 403, code 10042; enable in Dashboard). KV, Queues, Workflows, AI Gateway, Pages list empty; no Vectorize index found.
 - Next recommendation: isolated new staging foundation, preserve legacy resources; assess source recovery and schema compatibility before reuse. Do not use real personal data until localization/security requirements verified. R2 activation required before document storage; not required for initial health/API scaffold. Rotate previously exposed bot token before use.
 - Pending: full source recovery, endpoint tests, schema constraints/migrations, billing/limits, DNS/WAF, backups/restore, deployment provenance, secrets validity and legal localization. No production readiness claim.
+
+## 14. Development Stage 03 — Backend Foundation (27.11.2026)
+
+Status: **Completed for the approved Stage 03 scope; Project Manager/Owner audit and merge are pending.** Stage 04 has not started.
+
+### 14.1 Architecture and module boundaries
+
+- Implemented a TypeScript/pnpm modular serverless monorepo with one Hono API Worker. The 16 approved domains remain logical modules rather than separate Workers.
+- Dependency direction is explicitly registered and cycle-tested: Security is foundational; Account depends on Security; Auth depends on Security and Account; provider-facing AI/Research depend on Auth, Financial, Knowledge and Document boundaries; Admin depends on Auth, Security and Analytics. HTTP transport, configuration, repositories, security ports, logging and contracts are separated.
+- Authentication, Telegram initData verification, session management and admin TOTP are ports only. The protected `/api/v1/account` boundary is registered with a default-deny authenticator and returns `401`; no temporary bypass exists.
+- Financial business logic and tables were not implemented. The foundation preserves integer-safe/idempotent and append-only patterns for later ledger work through scoped idempotency keys, prepared repositories and append-only audit events.
+- Rate limiting is represented by a transport-independent decision port and standardized `429` error. No unreliable in-isolate counter or unnecessary KV/DO resource was introduced; distributed enforcement is deferred until a concrete policy is approved.
+
+### 14.2 Repository structure and stack
+
+```text
+apps/api/                 Worker entrypoint, routes, middleware, services and runtime tests
+packages/config/          environment parsing and feature flag keys
+packages/contracts/       standard API envelopes
+packages/core/            16-module dependency graph
+packages/database/        prepared D1 repositories and readiness check
+packages/errors/          centralized error taxonomy
+packages/logger/          structured JSON logging and redaction
+packages/security/        auth/RBAC/rate-limit/Telegram/TOTP ports and secure headers
+packages/validation/      Zod validation adapter
+migrations/               ordered D1 SQL migrations
+scripts/                  migration validation and tracked-file secret scan
+.github/workflows/        quality gates and manually controlled staging deploy
+```
+
+Pinned foundation versions: Node.js 24, pnpm 11.25.0, TypeScript 6.0.3, Wrangler 4.168.0, Hono 4.13.23, Zod 4.6.7, Vitest 5.1.2 and `@cloudflare/vitest-plugin` 1.9.2. The lockfile is committed. Hono/Zod and the Workers test integration were verified by typecheck, Worker-runtime tests and a real staging deployment.
+
+### 14.3 API Gateway and endpoints
+
+Gateway capabilities implemented: cryptographic request IDs, routing, Zod input validation, authentication/authorization ports, empty-by-default CORS allowlist, 1 MiB request-size limit, extensible rate-limit port, centralized safe errors, structured redacted logs, runtime environment validation, D1-authoritative feature flags, dependency timeout/request cancellation handling and secure response headers.
+
+| Method | Endpoint | Staging result | Purpose |
+|---|---|---:|---|
+| GET | `/health` | 200 | Fast Worker liveness; no D1 dependency |
+| GET | `/ready` | 200 | Real D1 `SELECT 1` readiness |
+| GET | `/api/v1/status` | 200 | Stage/environment status |
+| GET | `/api/v1/version` | 200 | Application and API version |
+| GET | `/api/v1/config/public` | 200 | Safe locales/timezone/currency/auth and public capability states |
+| GET | `/api/v1/services` | 200 | Real availability; unimplemented services are `disabled` or `coming_soon` |
+| GET | `/api/v1/openapi.json` | 200 | OpenAPI 3.1 contract in the standard response envelope |
+| GET | `/api/v1/account` | 401 | Stage 04 protected boundary, default deny |
+| GET | unknown route | 404 | Standard `NOT_FOUND` response |
+| POST | `/health` | 405 | Standard `METHOD_NOT_ALLOWED` response |
+
+Success and error responses use the approved `{ success, data/error, meta.requestId }` contract. Standard categories cover validation, unauthorized, forbidden, not found, conflict, payload too large, rate limited, feature disabled, service unavailable and internal errors. Stack traces, SQL and secrets are never returned.
+
+Staging URL: <https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev>
+
+### 14.4 Database foundation
+
+- Created isolated D1 `yuristim-db-v3-staging` (`01d72d07-1fd7-41f7-9550-3cb58333b3e3`), primary location hint EEUR, read replication disabled. No legacy data was copied.
+- Applied and verified `0001_system_foundation.sql` and `0002_seed_feature_flags.sql` locally and remotely. `d1_migrations` contains both ordered records.
+- Tables: `system_settings`, `feature_flags`, append-only `audit_events`, and `idempotency_keys`; strict tables, JSON checks, indexes, unique constraints, a self-referencing audit foreign key and prepared queries are used.
+- All eight required high-risk flags are seeded disabled: AI execution, research execution, real payments, credit purchases, Pro purchases, public lawyer registration, document uploads and production Telegram webhook.
+- Recovery baseline: versioned forward migrations and Cloudflare D1 Time Travel capability are available. Export-before-risky-change and restore drills remain mandatory for later production readiness; no restore drill or RPO/RTO claim was made in Stage 03.
+
+### 14.5 Cloudflare resources
+
+Created only the resources required now:
+
+| Resource | Name | State |
+|---|---|---|
+| Worker | `yuristim-api-v3-staging` | deployed, workers.dev enabled, observability enabled |
+| D1 | `yuristim-db-v3-staging` | migrations applied, readiness verified |
+
+Not created: Bot Worker, KV, Queue, Vectorize, Workflows or Durable Objects. They are unnecessary for the Stage 03 executable scope. R2 remains disabled at account level (`HTTP 403`, code `10042`) and was not enabled because that requires Dashboard/billing action. Existing five Workers and four legacy D1 databases were read-only inventoried and were not changed, redeployed, cleared or joined to V3.
+
+Workers Logs are enabled with full staging sampling; automatic traces are enabled at 1% sampling. Application logs contain request ID, timestamp, environment, method, path, status, duration and error category only; authorization, cookies, tokens, Telegram initData, documents, private conversations and PII are redacted or never logged.
+
+### 14.6 Environments and commands
+
+- Development: local Workers runtime and local D1 state; placeholder-only `.env.example` and `.dev.vars.example`.
+- Staging: isolated Worker/D1 above; browser origins denied until an approved frontend origin exists.
+- Production: configuration contract exists, but no production resource or deployment was created.
+
+Verified project commands:
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm test:integration
+pnpm db:migrate:local
+pnpm db:migrate:staging
+pnpm deploy:staging
+```
+
+`db:migrate:staging` and `deploy:staging` are valid Wrangler commands and require protected Cloudflare credentials. During this run the connected Cloudflare API was used instead of exposing a token to the shell. `pnpm dev` is intentionally long-running and was not left running after automated Worker-runtime tests.
+
+### 14.7 CI/CD and security checks
+
+- `quality.yml` runs on pull requests and the Stage 03 branch: frozen install, formatting, ESLint, TypeScript, migration validation/local apply, all Worker-runtime tests, dry-run bundle, tracked-file secret scanning and high-severity production dependency audit.
+- `deploy-staging.yml` is manual-only, targets the GitHub `staging` environment, requires an explicit commit SHA and protected Cloudflare credentials, re-runs quality gates, applies remote migrations and deploys staging. Missing credentials fail the workflow. There is no production auto-deploy.
+- GitHub Actions have `contents: read` only, concurrency controls and timeouts. External setup actions are pinned to reviewed commit SHAs rather than moving tags.
+- No API key, Telegram token, Cloudflare token, session secret or personal data is committed. The previously disclosed Telegram token was not used.
+
+### 14.8 Actual test results
+
+Local final quality run:
+
+| Check | Result |
+|---|---:|
+| `pnpm format:check` | passed |
+| `pnpm lint` | passed |
+| `pnpm typecheck` | passed |
+| `pnpm db:validate` | passed, 2 ordered files |
+| `pnpm db:migrate:local` | passed, 2 migrations |
+| `pnpm test` | 24 passed, 0 failed, 0 skipped |
+| `pnpm build` | passed, Wrangler dry-run bundle |
+| `pnpm security:secrets` | passed, 64 non-lock tracked files scanned before documentation commit |
+| `pnpm audit --prod --audit-level=high` | passed, no known vulnerabilities |
+
+Test distribution: API/integration 8 passed; security 9 passed; database 6 passed; module graph 1 passed. Covered liveness/readiness/public config/version/services/OpenAPI/404/405, unauthorized/forbidden/CORS/invalid input/oversize/sensitive exposure/feature bypass/log redaction/secure headers, fresh migrations/tracking/FK/unique/prepared SQL/idempotency uniqueness/append-only audit and the 16-module acyclic graph.
+
+Real deployment checks passed for Worker availability, `/health`, D1-backed `/ready`, all public endpoints, disabled features, OpenAPI, protected default deny, 404, 405 and rejected CORS. No fake deployment or simulated staging result is recorded.
+
+### 14.9 Important implementation decisions
+
+1. One modular API Worker was selected to minimize deployment and operational complexity; module seams allow later extraction only when scaling or isolation requires it.
+2. D1 is the only new persistence resource. Feature flags are authoritative in D1; no noncritical KV cache was created prematurely.
+3. CORS is deny-all in staging until an approved web/Mini App origin is known. Non-browser server requests remain available.
+4. Authentication is a locked interface, not a stub identity. This prevents Stage 03 from accidentally exposing protected data.
+5. No module-level mutable limiter was used because Worker isolates cannot provide reliable global limits. The rate-limit port can later bind to Cloudflare native rules or a coordinated store.
+6. Current Cloudflare Vitest integration (`@cloudflare/vitest-plugin`) was selected over the older pool configuration and executes tests inside workerd with a real local D1 binding.
+7. R2/Queue/Vectorize/Bot resources were deferred because uploads, background jobs, retrieval and Telegram webhook execution are explicitly outside Stage 03.
+
+### 14.10 Blockers and Stage 04 readiness
+
+- R2 must be enabled by the Owner in Cloudflare Dashboard before private document storage work; no action is needed for Stage 03.
+- GitHub staging environment secrets must be configured before the manual Actions deploy workflow can be proven end-to-end. Direct connected-API staging deployment is verified.
+- Uzbekistan personal-data localization, retention, legal-source access and production observability pricing/privacy still require legal/Owner review before real user data.
+- D1 restore drill, WAF/rate policy tuning, custom domain, production secrets and production deployment remain later audited work.
+
+Stage 04 may build Telegram-only initData verification, replay protection, account/session tables, secure cookies, session revoke flows and admin TOTP on these ports and migrations. Stage 04 must not begin until this draft PR is audited and approved.
+
+GitHub delivery: branch `development/stage-03-backend-foundation`, foundation code commit `3840f7c1b30761575853b78d744d153d888f5d17`, draft PR <https://github.com/diyorbeknematov28042007-dotcom/Yuristim27.11.2026/pull/1>. Main remains unchanged.
+
+### Stage 03 changelog
+
+- 27.11.2026: Stage 03 TypeScript monorepo, API Gateway, D1 foundation, security/logging/configuration, Worker-runtime tests, CI/CD, isolated V3 staging deployment and real endpoint validation completed; Stage 04 explicitly not started.
