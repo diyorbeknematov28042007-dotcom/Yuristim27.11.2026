@@ -13,3 +13,11 @@ export const validateInput = <T>(schema: ZodType<T>, input: unknown): T => {
   }
   return result.data;
 };
+
+export const parseJsonBody = async (request: Request): Promise<unknown> => {
+  try {
+    return await request.json();
+  } catch (cause) {
+    throw new AppError("VALIDATION_ERROR", "Invalid JSON request", { cause });
+  }
+};

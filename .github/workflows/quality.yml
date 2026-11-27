@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - development/stage-03-backend-foundation
+      - development/stage-04-authentication-account
 
 permissions:
   contents: read

@@ -20,6 +20,29 @@ export type ServiceStatus = {
   status: ServiceAvailability;
 };
 
+export type AccountFinancialStatus =
+  "active" | "restricted" | "suspended" | "banned" | "deletion_pending" | "deleted";
+
+export type AccountFinancialContext = {
+  accountId: string;
+  status: AccountFinancialStatus;
+  eligibleForLedger: boolean;
+};
+
+export type AccountLifecycleEvent =
+  | {
+      type: "account.created";
+      accountId: string;
+      occurredAt: string;
+    }
+  | {
+      type: "account.status_changed";
+      accountId: string;
+      previousStatus: AccountFinancialStatus;
+      status: AccountFinancialStatus;
+      occurredAt: string;
+    };
+
 export const successResponse = <T>(data: T, requestId: string): ApiSuccess<T> => ({
   success: true,
   data,
