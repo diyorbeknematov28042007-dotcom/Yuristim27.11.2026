@@ -239,7 +239,7 @@ Pinned foundation versions: Node.js 24, pnpm 11.25.0, TypeScript 6.0.3, Wrangler
 
 ### 14.3 API Gateway and endpoints
 
-Gateway capabilities implemented: cryptographic request IDs, routing, Zod input validation, authentication/authorization ports, empty-by-default CORS allowlist, 1 MiB request-size limit, extensible rate-limit port, centralized safe errors, structured redacted logs, runtime environment validation, D1-authoritative feature flags, dependency timeout/request cancellation handling and secure response headers.
+Gateway capabilities implemented: cryptographic request IDs, routing, Zod input validation, authentication/authorization ports, empty-by-default CORS allowlist, a 1 MiB header plus bounded streamed-body limit, extensible rate-limit port, centralized safe errors, structured redacted logs, runtime environment validation, D1-authoritative feature flags, standardized D1 deadline/request cancellation handling and secure response headers.
 
 | Method | Endpoint | Staging result | Purpose |
 |---|---|---:|---|
@@ -306,7 +306,7 @@ pnpm deploy:staging
 ### 14.7 CI/CD and security checks
 
 - `quality.yml` runs on pull requests and the Stage 03 branch: frozen install, formatting, ESLint, TypeScript, migration validation/local apply, a real `pnpm dev`/`/health` smoke check on the GitHub runner, all Worker-runtime tests, dry-run bundle, tracked-file secret scanning and high-severity production dependency audit.
-- `deploy-staging.yml` is manual-only, targets the GitHub `staging` environment, requires an explicit commit SHA and protected Cloudflare credentials, re-runs quality gates, applies remote migrations and deploys staging. Missing credentials fail the workflow. There is no production auto-deploy.
+- `deploy-staging.yml` is manual-only. A trusted branch checkout validates that the input is a full lowercase 40-character SHA, that GitHub contains the exact commit, and that it is an ancestor of the approved Stage 03 branch head before any input-selected checkout. The deploy job then targets the GitHub `staging` environment, so configured required reviewers must approve it, requires protected Cloudflare credentials, re-runs quality gates, applies remote migrations and deploys staging. Missing credentials fail the workflow. There is no production auto-deploy.
 - GitHub Actions have `contents: read` only, concurrency controls and timeouts. External setup actions are pinned to reviewed commit SHAs rather than moving tags.
 - No API key, Telegram token, Cloudflare token, session secret or personal data is committed. The previously disclosed Telegram token was not used.
 
@@ -321,12 +321,12 @@ Local final quality run:
 | `pnpm typecheck` | passed |
 | `pnpm db:validate` | passed, 2 ordered files |
 | `pnpm db:migrate:local` | passed, 2 migrations |
-| `pnpm test` | 24 passed, 0 failed, 0 skipped |
+| `pnpm test` | 32 passed, 0 failed, 0 skipped (28 Worker + 4 deployment-policy tests) |
 | `pnpm build` | passed, Wrangler dry-run bundle |
 | `pnpm security:secrets` | passed, 64 non-lock tracked files scanned before documentation commit |
 | `pnpm audit --prod --audit-level=high` | passed, no known vulnerabilities |
 
-Test distribution: API/integration 8 passed; security 9 passed; database 6 passed; module graph 1 passed. Covered liveness/readiness/public config/version/services/OpenAPI/404/405, unauthorized/forbidden/CORS/invalid input/oversize/sensitive exposure/feature bypass/log redaction/secure headers, fresh migrations/tracking/FK/unique/prepared SQL/idempotency uniqueness/append-only audit and the 16-module acyclic graph.
+Test distribution: API/integration 8 passed; security 10 passed; database 9 passed; module graph 1 passed; deployment policy/workflow 4 passed. Coverage now also includes a body stream larger than 1 MiB without `Content-Length`, pre-start and in-flight request cancellation, D1 deadline behavior, malicious/partial deployment SHA rejection, exact commit verification policy, approved-branch ancestry statuses and workflow input interpolation regression checks.
 
 Real deployment checks passed for Worker availability, `/health`, D1-backed `/ready`, all public endpoints, disabled features, OpenAPI, protected default deny, 404, 405 and rejected CORS. No fake deployment or simulated staging result is recorded.
 
@@ -344,13 +344,26 @@ Real deployment checks passed for Worker availability, `/health`, D1-backed `/re
 
 - R2 must be enabled by the Owner in Cloudflare Dashboard before private document storage work; no action is needed for Stage 03.
 - GitHub staging environment secrets must be configured before the manual Actions deploy workflow can be proven end-to-end. Direct connected-API staging deployment is verified.
+- The workflow is wired to the `staging` environment approval gate, but this connection cannot read repository environment protection settings. The Owner must confirm that required reviewers are configured in GitHub Environment settings before relying on human approval enforcement.
 - Uzbekistan personal-data localization, retention, legal-source access and production observability pricing/privacy still require legal/Owner review before real user data.
 - D1 restore drill, WAF/rate policy tuning, custom domain, production secrets and production deployment remain later audited work.
 
 Stage 04 may build Telegram-only initData verification, replay protection, account/session tables, secure cookies, session revoke flows and admin TOTP on these ports and migrations. Stage 04 must not begin until this draft PR is audited and approved.
 
-GitHub delivery: branch `development/stage-03-backend-foundation`, foundation code commit `3840f7c1b30761575853b78d744d153d888f5d17`, draft PR <https://github.com/diyorbeknematov28042007-dotcom/Yuristim27.11.2026/pull/1>. Main remains unchanged.
+GitHub delivery: branch `development/stage-03-backend-foundation`, foundation code commit `3840f7c1b30761575853b78d744d153d888f5d17`, audit-correction code commit `c8825c62c1be4c2119d4868af706df744a020b25`, draft PR <https://github.com/diyorbeknematov28042007-dotcom/Yuristim27.11.2026/pull/1>. Main remains unchanged.
+
+### 14.11 Project Manager audit corrections — BF-001–004
+
+| Finding | Correction | Verification |
+|---|---|---|
+| BF-001 | `Content-Length` remains an early rejection hint, but every present request body is also read through a bounded stream before routing. At most 1 MiB of accepted chunks are retained; the reader is cancelled immediately on overflow and the verified body is replayed to downstream handlers. | Headerless 17 × 64 KiB stream returns standardized `413`; the same chunked request returned `413` on V3 staging. |
+| BF-002 | Manual deployment validates a full lowercase SHA, retrieves the exact commit through GitHub API, and accepts only `identical`/`ahead` comparison states proving that commit is on the approved branch history. Validation runs from a trusted branch checkout before input-selected checkout. The deploy job is behind the `staging` GitHub Environment gate. | Regression tests passed; GitHub compare returned `identical` for the deployed commit and branch head. Environment required-reviewer configuration remains an Owner-verification item. |
+| BF-003 | Dispatch input is passed only through an environment variable to the validator. Shell commands contain no direct `${{ inputs.commit_sha }}` interpolation; the deploy command receives only the validated hex output and quotes the environment variable. | Injection strings, partial SHA, uppercase SHA, direct shell interpolation and direct input checkout regression tests passed. |
+| BF-004 | All API D1 calls now use one `runD1Operation` policy with a positive timeout and request `AbortSignal`. It refuses to start after cancellation and returns standardized `503` on timeout/cancellation. | Three deadline/cancellation tests passed and `/ready` remained `200` against staging D1. Current D1 binding methods expose no `AbortSignal`; therefore a timeout stops awaiting the query but cannot forcibly cancel an already-started server-side D1 operation. |
+
+Audit correction evidence: GitHub Quality run #10 (`45945342119`) completed successfully with all steps passed. V3 deployment `18d4576fa765450db84901af0dba1331` serves commit `c8825c62c1be4c2119d4868af706df744a020b25`; health, readiness/D1, all public routes, default-deny auth, 404, 405, rejected CORS and headerless chunked oversize enforcement were rechecked successfully. Legacy Cloudflare Worker modification timestamps remained unchanged.
 
 ### Stage 03 changelog
 
 - 27.11.2026: Stage 03 TypeScript monorepo, API Gateway, D1 foundation, security/logging/configuration, Worker-runtime tests, CI/CD, isolated V3 staging deployment and real endpoint validation completed; Stage 04 explicitly not started.
+- 27.11.2026: Project Manager findings BF-001–004 corrected, regression-tested, passed GitHub Quality run #10 and redeployed to isolated V3 staging; PR #1 remains draft and unmerged.
