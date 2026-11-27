@@ -517,3 +517,7 @@ V3 staging deployment `4fead69f24b64f4e9b137a00e7916300` serves application `0.5
 4. Production reconciliation policy, accounting/tax review, D1 restore drills and operator alert routing require Owner/legal review before real money or production users.
 
 Stage 06 Design System can consume the documented balance, subscription, estimate and reservation contracts without embedding financial rules in the client. Stage 06 must not start and this branch must not merge until Owner review approves the draft PR.
+
+
+### Stage 05 — Owner acceptance
+Owner approved Financial Core implementation and deferred remaining integrations. PR #3 merged into main: `b4e452f19dad9212226b128fda8dc2c98e230226`. Real Telegram-authenticated financial flows, provider pricing, payments/refunds/disputes/revenue recognition, production accounting/tax/reconciliation/recovery remain pending. Payments remain disabled. Stage 06 Design System may begin. Comprehensive audit remains deferred to integration/testing per Owner direction.
