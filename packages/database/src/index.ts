@@ -94,5 +94,6 @@ export const findSystemSetting = async (
 };
 
 export * from "./account";
+export * from "./ai";
 export * from "./execution";
 export * from "./financial";

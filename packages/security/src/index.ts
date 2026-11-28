@@ -54,6 +54,20 @@ export const enforceRateLimit = (decision: RateLimitDecision): void => {
   }
 };
 
+export const constantTimeTextEqual = async (left: string, right: string): Promise<boolean> => {
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(left)),
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(right)),
+  ]);
+  const leftBytes = new Uint8Array(leftHash);
+  const rightBytes = new Uint8Array(rightHash);
+  let difference = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    difference |= leftBytes[index]! ^ rightBytes[index]!;
+  }
+  return difference === 0;
+};
+
 export const isAllowedOrigin = (origin: string, allowlist: ReadonlySet<string>): boolean =>
   allowlist.has(origin);
 

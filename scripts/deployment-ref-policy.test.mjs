@@ -43,7 +43,7 @@ test("deployment authorization verifies exact commit existence and branch ancest
     validSha,
   );
   assert.equal(calls.length, 2);
-  assert.match(calls[1], /compare\/a{40}\.\.\.development%2Fstage-05-financial-core$/);
+  assert.match(calls[1], /compare\/a{40}\.\.\.development%2Fstage-07-yuristim-ai$/);
 });
 
 test("deployment workflow never interpolates dispatch input into shell or checkout", async () => {

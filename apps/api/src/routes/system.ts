@@ -19,7 +19,7 @@ systemRoutes.get("/status", (context) => {
     successResponse(
       {
         platform: "yuristim",
-        stage: "financial_core",
+        stage: "yuristim_ai",
         status: "operational",
         environment: config.APP_ENV,
       },
@@ -79,6 +79,11 @@ systemRoutes.get("/services", async (context) => {
     timeoutMs: config.REQUEST_TIMEOUT_MS,
     signal: context.req.raw.signal,
   }).getAll();
+  const litePricing = await context.env.DB.prepare(
+    `SELECT 1 AS configured FROM pricing_versions v
+     JOIN pricing_items i ON i.version_id = v.id
+     WHERE v.status = 'active' AND i.price_key = 'ai.google.gemini.total_token' LIMIT 1`,
+  ).first<{ configured: number }>();
   return context.json(
     successResponse(
       {
@@ -89,7 +94,14 @@ systemRoutes.get("/services", async (context) => {
           {
             id: "yuristim-ai",
             name: "Yuristim AI",
-            status: flags.ai_provider_execution ? "coming_soon" : "disabled",
+            status:
+              flags.ai_provider_execution &&
+              context.env.GEMINI_API_KEY !== undefined &&
+              litePricing?.configured === 1
+                ? "available"
+                : flags.ai_provider_execution
+                  ? "coming_soon"
+                  : "disabled",
           },
           {
             id: "research",

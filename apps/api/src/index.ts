@@ -19,7 +19,10 @@ import { CbuFxProvider } from "./adapters/cbu";
 import { adminRoutes } from "./routes/admin";
 import { financialRoutes } from "./routes/financial";
 import { adminFinancialRoutes } from "./routes/admin-financial";
-import { D1FinancialRepository } from "@yuristim/database";
+import { aiRoutes } from "./routes/ai";
+import { adminAIRoutes } from "./routes/admin-ai";
+import { opsAIRoutes } from "./routes/ops-ai";
+import { D1AIRepository, D1FinancialRepository } from "@yuristim/database";
 import type { AppBindings } from "./types";
 
 export const app = new Hono<AppBindings>();
@@ -55,6 +58,9 @@ app.route("/api/v1/account", accountRoutes);
 app.route("/api/v1/admin", adminRoutes);
 app.route("/api/v1/financial", financialRoutes);
 app.route("/api/v1/admin/financial", adminFinancialRoutes);
+app.route("/api/v1/ai", aiRoutes);
+app.route("/api/v1/admin/ai", adminAIRoutes);
+app.route("/api/v1/ops/ai", opsAIRoutes);
 
 const knownPaths = new Set([
   "/health",
@@ -104,6 +110,19 @@ const knownPaths = new Set([
   "/api/v1/admin/financial/referrals/process",
   "/api/v1/admin/financial/reconciliation",
   "/api/v1/admin/financial/analytics",
+  "/api/v1/ai/models",
+  "/api/v1/ai/conversations",
+  "/api/v1/ai/memory",
+  "/api/v1/ai/tools",
+  "/api/v1/ai/documents/upload",
+  "/api/v1/ai/documents/create",
+  "/api/v1/ai/voice/capabilities",
+  "/api/v1/ai/legal-sources/status",
+  "/api/v1/admin/ai/models",
+  "/api/v1/admin/ai/emergency-disable",
+  "/api/v1/admin/ai/prompts",
+  "/api/v1/admin/ai/usage",
+  "/api/v1/ops/ai/gemini/probe",
 ]);
 
 app.notFound((context) => {
@@ -163,6 +182,10 @@ const scheduled = async (controller: ScheduledController, env: Env): Promise<voi
     await repository.expireDueCredits(now.toISOString());
     await repository.processSubscriptions(now);
     await repository.processReferralRewards(now);
+    await new D1AIRepository(env.DB, {
+      timeoutMs: 30_000,
+      signal: abortController.signal,
+    }).expireTemporaryConversations(now.toISOString());
     if (controller.cron === "10 19 * * *") {
       try {
         const rates = await new CbuFxProvider().fetchLatest(["USD", "EUR", "RUB"], now);
