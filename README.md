@@ -601,7 +601,7 @@ Owner approved Design System implementation. PR #4 merged into main: `94ff9ef82c
 
 ## 18. Development Stage 07 — Yuristim AI
 
-Status on 28.11.2026: **Partial — backend foundation and synthetic regression suite are complete; V3 staging migration, deployment and real Gemini probe are pending.** OpenAI credentials, approved provider pricing, R2 and a durable background queue are not available, so the affected capabilities remain fail-closed. Stage 08 has not started.
+Status on 28.11.2026: **Partial — backend foundation, synthetic regression suite, V3 migrations, deployment and public endpoint verification are complete; the real Gemini probe did not pass.** The bounded Google provider request ended with `SERVICE_UNAVAILABLE` / cancellation at the 45-second timeout after the request contract was aligned with the official Interactions API. OpenAI credentials, approved provider pricing, R2 and a durable background queue are not available, so the affected capabilities remain fail-closed. Stage 08 has not started.
 
 ### 18.1 Architecture and provider boundaries
 
@@ -647,12 +647,17 @@ All routes below are under `/api/v1`, use the standard response envelope and def
 
 Local Cloudflare Workers tests currently report **72 passed, 0 failed** before the staging deployment pass. The suite covers official provider request privacy, provider-secret fail-closed behavior, prompt-injection rejection, authentication, CSRF, tenant isolation, conversation lifecycle/search, explicit memory consent/deletion, Pro without OpenAI, Lite reservation/usage/settlement/idempotency, SSE final settlement, the protected operational probe boundary, blocked R2 upload, migrations, constraints, append-only records and all previous Auth/Financial regressions. MSW Cloudflare outbound mocks are synthetic and are not described as real Gemini/OpenAI results.
 
-V3 resource audit reconfirmed Worker `yuristim-api-v3-staging` and D1 `yuristim-db-v3-staging`; all previous Workers and D1 databases remain unchanged. R2 still returns Cloudflare code `10042` and was not enabled. No Queue, Workflow, Vectorize or paid monitoring resource was created.
+GitHub Actions Quality run [`46137409745`](https://github.com/diyorbeknematov28042007-dotcom/Yuristim27.11.2026/actions/runs/46137409745) passed for commit `ae6b32e37fdf62b2249c26fa454da1200a6b9c74`: formatting, lint, typecheck, local migration, development smoke test, all tests, build, tracked-file secret scan and production dependency audit succeeded. D1 migrations `0007` and `0008` are recorded on staging; `PRAGMA foreign_key_check` returned zero violations, while the absence of an active `ai.*` pricing item keeps real user execution closed.
+
+V3 deployment `e44cb6f9-fc04-45b8-bdd7-31b714a43ce3` (Worker version `f1e34af4-cb5e-4043-a418-c00a39d6b0c1`) serves application `0.7.0` at <https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev>. Real checks returned `/health` 200, D1-backed `/ready` 200, `/api/v1/version` 200 with the deployed commit, `/api/v1/services` 200 with Yuristim AI `coming_soon` and documents disabled, OpenAPI 200, and protected `/api/v1/ai/models` 401 without credentials. The separately secret-authenticated real Gemini probe returned 503 after its bounded provider timeout; it is **not** counted as passed and no provider output or cost was represented as real.
+
+V3 resource audit reconfirmed Worker `yuristim-api-v3-staging` and D1 `yuristim-db-v3-staging`; all previous Workers and D1 databases remain unchanged. Only `GEMINI_API_KEY` and the operational probe credential were added as Worker Secrets; no OpenAI secret was added. R2 still returns Cloudflare code `10042` and was not enabled. No Queue, Workflow, Vectorize or paid monitoring resource was created. The repository retains its full-SHA/approved-branch manual staging workflow and GitHub `staging` environment boundary; this deployment used the connected Cloudflare API because the cloud-browser GitHub session was not authenticated.
 
 ### 18.6 Blockers and Stage 08 readiness
 
-1. OpenAI API key is absent; Pro architecture is implemented but provider execution remains fail-closed.
-2. Owner-approved provider prices are absent; real user AI calls cannot create a financially valid reservation yet. The isolated operational Gemini probe does not create user credits or revenue and is used only for the explicitly authorized staging connectivity check.
-3. R2 is disabled, so PDF/DOCX/DOC/TXT/image upload, OCR inputs and PDF/DOCX export cannot be enabled. Existing D1 text-draft/version metadata is not a substitute for private file storage.
-4. Durable background jobs require Queue/Workflow authorization; no paid resource was enabled. Voice adapters expose a closed capability contract until a provider/security/cost decision is approved.
-5. Stage 08 can consume the model/prompt registry, account-isolated chat context, citation verification states and legal-source status contract. Stage 08 must not begin until Stage 07 Owner review and merge.
+1. Gemini credentials are present only as a Cloudflare Secret, but the bounded real provider probe timed out/cancelled and remains unverified. Lite user execution must remain fail-closed until provider connectivity and an approved price version both pass.
+2. OpenAI API key is absent; Pro architecture is implemented but provider execution remains fail-closed.
+3. Owner-approved provider prices are absent; real user AI calls cannot create a financially valid reservation yet. The isolated operational Gemini probe does not create user credits or revenue and is used only for the explicitly authorized staging connectivity check.
+4. R2 is disabled, so PDF/DOCX/DOC/TXT/image upload, OCR inputs and PDF/DOCX export cannot be enabled. Existing D1 text-draft/version metadata is not a substitute for private file storage.
+5. Durable background jobs require Queue/Workflow authorization; no paid resource was enabled. Voice adapters expose a closed capability contract until a provider/security/cost decision is approved.
+6. Stage 08 can consume the model/prompt registry, account-isolated chat context, citation verification states and legal-source status contract. Stage 08 must not begin until Stage 07 Owner review and merge.
