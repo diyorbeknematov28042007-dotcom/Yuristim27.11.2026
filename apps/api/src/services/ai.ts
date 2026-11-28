@@ -11,8 +11,10 @@ import { successResponse } from "@yuristim/contracts";
 import { D1AIRepository, D1FeatureFlagRepository } from "@yuristim/database";
 import { AppError } from "@yuristim/errors";
 import { enforceFeatureFlag, sha256Hex } from "@yuristim/security";
+import type { VerifiedLegalCitation } from "@yuristim/knowledge";
 import type { Context } from "hono";
 import { financialRepositoryFor } from "./financial";
+import { legalRetrievalForAI } from "./legal";
 import type { AppBindings } from "../types";
 
 type AIContext = Context<AppBindings>;
@@ -85,6 +87,8 @@ type PreparedRun = {
   reservationId: string;
   model: Awaited<ReturnType<D1AIRepository["modelConfiguration"]>>;
   prompt: Awaited<ReturnType<D1AIRepository["activePrompt"]>>;
+  systemPrompt: string;
+  citations: VerifiedLegalCitation[];
   messages: AIMessage[];
 };
 
@@ -110,10 +114,12 @@ export const prepareRun = async (
 
   const priorMessages = await historyFor(repository, principal.accountId, input.conversationId);
   const messages = [...priorMessages, { role: "user" as const, content: input.content }];
+  const legal = await legalRetrievalForAI(context, input.content);
+  const systemPrompt = `${prompt.content}\n\nTEKSHIRILGAN HUQUQIY KONTEKST:\n${legal.context}\n\nFaqat berilgan tekshirilgan kontekstga tayangan iqtiboslarni manbasi bilan ko‘rsating. Kontekst yetarli bo‘lmasa, buni ochiq ayting.`;
   const estimatedInputUnits = Math.max(
     1,
     Math.ceil(
-      (prompt.content.length + messages.reduce((sum, item) => sum + item.content.length, 0)) / 4,
+      (systemPrompt.length + messages.reduce((sum, item) => sum + item.content.length, 0)) / 4,
     ),
   );
   const estimatedUnits = estimatedInputUnits + model.maxOutputTokens;
@@ -130,6 +136,11 @@ export const prepareRun = async (
       modelName: model.modelName,
       modelConfigVersion: model.configVersion,
       promptVersion: prompt.version,
+      legalCitations: legal.citations.map((citation) => ({
+        documentId: citation.documentId,
+        version: citation.version,
+        provision: citation.provision,
+      })),
       maxMicrocredits: input.maxMicrocredits,
     }),
   );
@@ -168,6 +179,8 @@ export const prepareRun = async (
     reservationId: reservation.id,
     model,
     prompt,
+    systemPrompt,
+    citations: legal.citations,
     messages,
   };
 };
@@ -234,6 +247,7 @@ const settleCompleted = async (
     chargedMicrocredits: settlement.actualMicrocredits,
     now,
   });
+  await run.repository.addVerifiedCitations(messageId, run.citations, now);
   return { messageId, chargedMicrocredits: settlement.actualMicrocredits };
 };
 
@@ -261,7 +275,7 @@ export const executeRun = async (
   try {
     const result = await providerFor(context, run.model.provider).generate({
       modelId: run.model.providerModelId,
-      systemPrompt: run.prompt.content,
+      systemPrompt: run.systemPrompt,
       messages: run.messages,
       maxOutputTokens: run.model.maxOutputTokens,
       signal: timeout.signal,
@@ -272,7 +286,7 @@ export const executeRun = async (
       messageId: settled.messageId,
       model: run.model.modelName,
       verificationStatus: "unverified" as const,
-      citations: [],
+      citations: run.citations,
       content: `${result.text}\n\n${safetyNotice}`,
       usage: { inputUnits: result.inputUnits, outputUnits: result.outputUnits },
       chargedMicrocredits: settled.chargedMicrocredits,
@@ -309,7 +323,7 @@ export const executeStream = async (
   try {
     upstream = await providerFor(context, run.model.provider).stream({
       modelId: run.model.providerModelId,
-      systemPrompt: run.prompt.content,
+      systemPrompt: run.systemPrompt,
       messages: run.messages,
       maxOutputTokens: run.model.maxOutputTokens,
       signal: timeout.signal,
@@ -374,6 +388,7 @@ export const executeStream = async (
           runId: run.runId,
           messageId: settled.messageId,
           verificationStatus: "unverified",
+          citations: run.citations,
           chargedMicrocredits: settled.chargedMicrocredits,
         }),
       );
@@ -429,7 +444,7 @@ export const modelAvailability = async (context: AIContext) => {
         providerConfigured,
         pricingConfigured,
         streaming: model.streamingEnabled,
-        legalSourceVerification: "stage_08_pending",
+        legalSourceVerification: "verified_d1_fts5",
       };
     }),
   );

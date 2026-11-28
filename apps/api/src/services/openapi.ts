@@ -38,9 +38,9 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Yuristim Backend API",
-    version: "0.7.0",
+    version: "0.8.0",
     description:
-      "Development Stage 07 Yuristim AI, financial, authentication and account contract.",
+      "Development Stage 08 verified legal knowledge, Yuristim AI, financial, authentication and account contract.",
   },
   servers: [
     {
@@ -392,6 +392,76 @@ export const openApiDocument = {
         responses: {
           "200": response("Provider model registry", { type: "object" }),
           "403": errorResponse("Admin role and recent TOTP required"),
+        },
+      },
+    },
+    "/api/v1/legal/status": {
+      get: {
+        operationId: "getLegalKnowledgeStatus",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "200": response("Legal source, document and search availability", { type: "object" }),
+          "401": errorResponse("Authentication required"),
+        },
+      },
+    },
+    "/api/v1/legal/search": {
+      get: {
+        operationId: "searchVerifiedLegalKnowledge",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "query", name: "q", required: true, schema: { type: "string" } },
+          { in: "query", name: "asOf", schema: { type: "string", format: "date-time" } },
+          {
+            in: "query",
+            name: "authority",
+            schema: {
+              type: "string",
+              enum: ["normative", "judicial_practice", "official_guidance"],
+            },
+          },
+        ],
+        responses: {
+          "200": response("Verified, effective-date-filtered D1 FTS5 results", {
+            type: "object",
+          }),
+          "400": errorResponse("Invalid search query or filter"),
+          "401": errorResponse("Authentication required"),
+          "429": errorResponse("Legal search rate limit exceeded"),
+        },
+      },
+    },
+    "/api/v1/legal/documents/{documentId}": {
+      get: {
+        operationId: "getEffectiveLegalDocumentVersion",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "path", name: "documentId", required: true, schema: { type: "string" } },
+          { in: "query", name: "asOf", schema: { type: "string", format: "date-time" } },
+        ],
+        responses: {
+          "200": response("Verified document version and provisions", { type: "object" }),
+          "404": errorResponse("No verified version is effective at the requested date"),
+        },
+      },
+    },
+    "/api/v1/admin/legal/imports": {
+      post: {
+        operationId: "importManuallyVerifiedLegalDocument",
+        security: [{ bearerSession: [] }],
+        responses: {
+          "201": response("Official allowlisted document imported", { type: "object" }),
+          "403": errorResponse("Owner or super-admin with recent TOTP required"),
+        },
+      },
+    },
+    "/api/v1/admin/legal/reindex": {
+      post: {
+        operationId: "reindexLegalKnowledge",
+        security: [{ bearerSession: [] }],
+        responses: {
+          "200": response("D1 FTS5 index rebuilt", { type: "object" }),
+          "403": errorResponse("Owner or super-admin with recent TOTP required"),
         },
       },
     },

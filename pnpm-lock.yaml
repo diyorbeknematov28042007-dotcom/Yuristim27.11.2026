@@ -95,6 +95,9 @@ importers:
       '@yuristim/errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@yuristim/knowledge':
+        specifier: workspace:*
+        version: link:../../packages/knowledge
       '@yuristim/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -156,10 +159,19 @@ importers:
       '@yuristim/errors':
         specifier: workspace:*
         version: link:../errors
+      '@yuristim/knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
 
   packages/design-tokens: {}
 
   packages/errors: {}
+
+  packages/knowledge:
+    dependencies:
+      '@yuristim/errors':
+        specifier: workspace:*
+        version: link:../errors
 
   packages/logger: {}
 

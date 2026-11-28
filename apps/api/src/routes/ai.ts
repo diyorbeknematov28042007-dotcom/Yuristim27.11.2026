@@ -13,6 +13,7 @@ import {
 import { repositoryFor as accountRepositoryFor } from "../services/auth";
 import { aiRepositoryFor, executeRun, executeStream, modelAvailability } from "../services/ai";
 import { requireIdempotencyKey } from "../services/financial";
+import { legalRepositoryFor } from "../services/legal";
 import type { AppBindings } from "../types";
 
 const conversationSchema = z.object({
@@ -289,7 +290,7 @@ aiRoutes.get("/tools", (context) =>
         tools: [
           { key: "document_analysis", status: "blocked_storage" },
           { key: "document_comparison", status: "blocked_storage" },
-          { key: "legal_source_lookup", status: "stage_08_pending" },
+          { key: "legal_source_lookup", status: "available_verified_fts5" },
           { key: "deep_research", status: "stage_10_pending" },
         ],
         backgroundExecution: "blocked_queue_not_authorized",
@@ -338,11 +339,16 @@ aiRoutes.get("/voice/capabilities", (context) =>
   ),
 );
 
-aiRoutes.get("/legal-sources/status", (context) =>
-  context.json(
+aiRoutes.get("/legal-sources/status", async (context) => {
+  return context.json(
     successResponse(
-      { verification: "stage_08_pending", unverifiedAnswersAreLabeled: true },
+      {
+        verification: "verified_sources_available",
+        unverifiedAnswersAreLabeled: true,
+        ...(await legalRepositoryFor(context).status()),
+        semanticSearch: "blocked_vectorize_not_authorized",
+      },
       context.get("requestId"),
     ),
-  ),
-);
+  );
+});

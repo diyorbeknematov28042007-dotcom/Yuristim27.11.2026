@@ -1,5 +1,6 @@
 import type { ProviderName, YuristimModel } from "@yuristim/ai";
 import { AppError } from "@yuristim/errors";
+import type { VerifiedLegalCitation } from "@yuristim/knowledge";
 import { runD1Operation, type D1ExecutionPolicy } from "./execution";
 
 export type AIModelConfiguration = {
@@ -500,6 +501,38 @@ export class D1AIRepository {
       this.policy,
     );
     return messageId;
+  }
+
+  async addVerifiedCitations(
+    messageId: string,
+    citations: readonly VerifiedLegalCitation[],
+    now: string,
+  ): Promise<void> {
+    if (citations.length === 0) return;
+    await runD1Operation(
+      () =>
+        this.database.batch(
+          citations.slice(0, 10).map((citation) =>
+            this.database
+              .prepare(
+                `INSERT INTO ai_citations (
+                  id, message_id, source_uri, source_title, article_reference,
+                  verification_status, verified_at, created_at
+                ) VALUES (?1, ?2, ?3, ?4, ?5, 'verified', ?6, ?7)`,
+              )
+              .bind(
+                crypto.randomUUID(),
+                messageId,
+                citation.officialUrl,
+                citation.documentTitle,
+                citation.provision,
+                citation.verifiedAt,
+                now,
+              ),
+          ),
+        ),
+      this.policy,
+    );
   }
 
   async failRun(input: {

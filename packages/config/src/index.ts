@@ -15,6 +15,8 @@ export const featureFlagKeys = [
   "promo_redemption",
   "referral_rewards",
   "weekly_credit_grants",
+  "legal_knowledge_search",
+  "legal_semantic_search",
 ] as const;
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];

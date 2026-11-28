@@ -9,6 +9,7 @@
   "dependencies": {
     "@yuristim/ai": "workspace:*",
     "@yuristim/config": "workspace:*",
-    "@yuristim/errors": "workspace:*"
+    "@yuristim/errors": "workspace:*",
+    "@yuristim/knowledge": "workspace:*"
   }
 }

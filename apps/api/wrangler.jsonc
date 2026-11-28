@@ -8,7 +8,7 @@
   "preview_urls": false,
   "vars": {
     "APP_ENV": "staging",
-    "APP_VERSION": "0.7.0",
+    "APP_VERSION": "0.8.0",
     "API_VERSION": "v1",
     "PUBLIC_BASE_URL": "https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev",
     "CORS_ALLOWLIST": "",
@@ -28,7 +28,7 @@
     },
   ],
   "triggers": {
-    "crons": ["0 19 * * SUN", "5 * * * *", "10 19 * * *"],
+    "crons": ["0 19 * * SUN", "5 * * * *", "10 19 * * *", "25 19 * * *"],
   },
   "observability": {
     "enabled": true,

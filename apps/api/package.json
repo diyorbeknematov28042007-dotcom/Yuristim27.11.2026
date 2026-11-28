@@ -1,6 +1,6 @@
 {
   "name": "@yuristim/api",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     "@yuristim/database": "workspace:*",
     "@yuristim/errors": "workspace:*",
     "@yuristim/logger": "workspace:*",
+    "@yuristim/knowledge": "workspace:*",
     "@yuristim/security": "workspace:*",
     "@yuristim/validation": "workspace:*",
     "hono": "4.13.23",

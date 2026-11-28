@@ -45,6 +45,12 @@ describe("D1 foundation migrations", () => {
         "ai_runs",
         "ai_memories",
         "ai_usage_events",
+        "legal_sources",
+        "legal_documents",
+        "legal_document_versions",
+        "legal_provisions",
+        "legal_ingestion_runs",
+        "legal_quarantine",
       ]),
     );
   });
@@ -62,6 +68,8 @@ describe("D1 foundation migrations", () => {
       "0006_seed_financial_flags.sql",
       "0007_yuristim_ai.sql",
       "0008_seed_ai_foundation.sql",
+      "0009_legal_knowledge_base.sql",
+      "0010_seed_verified_legal_sources.sql",
     ]);
   });
 

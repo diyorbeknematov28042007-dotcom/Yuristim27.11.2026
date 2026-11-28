@@ -665,3 +665,79 @@ V3 resource audit reconfirmed Worker `yuristim-api-v3-staging` and D1 `yuristim-
 
 ### Stage 07 — Owner acceptance
 Owner approved the partial AI backend implementation. PR #5 merged into main: `debdde7c56f7d2396b167e74b407cb3cd0c0f9ed`. Gemini operational timeout, OpenAI credentials and verified provider pricing deferred to Stage 15; R2, document analysis/creation and voice execution to be completed by Stage 15; Queue/Workflow activation as needed in later stages subject to authorization. Real user AI execution remains disabled until prerequisites are verified. Stage 08 Legal Knowledge Base may begin. No production authorization; comprehensive audit deferred per Owner direction.
+
+## 19. Development Stage 08 — Legal Knowledge Base
+
+Status on 28.11.2026: **Partial — the verified registry, versioned D1 schema, real FTS5 search, citations, AI retrieval boundary, administration APIs, local quality gates, V3 migrations and deployment are implemented. The complete legislation corpus, automatic full-document ingestion and semantic Vectorize search are not enabled.** Stage 09 has not started.
+
+### 19.1 Architecture and trust model
+
+- `@yuristim/knowledge` owns framework-neutral legal authority/status/completeness types, the exact official-domain allowlist, safe FTS query construction, citation context formatting and the fail-closed semantic-search state.
+- `D1LegalKnowledgeRepository` separates database access from HTTP transport. It uses prepared statements and the existing Stage 03 timeout/cancellation policy for source status, effective-date document selection, FTS retrieval, bounded manual imports, ingestion history, quarantine review and reindexing.
+- Legal sources are classified as normative registry, judicial authority or official publisher. Documents separately identify normative force, judicial practice and official guidance. A source being official does not turn metadata, commentary or court-practice listings into normative text.
+- Versions carry `current`, `historical`, `repealed`, `future` or `quarantined` status, effective date range, source/content hashes, verification state and `full`/`partial`/`metadata_only` completeness. Search never mixes a version outside the requested `asOf` date and excludes quarantined/unverified content.
+- AI-grade retrieval excludes `metadata_only` rows. Lite and Pro receive at most five verified D1 passages plus canonical citation metadata. Generated AI text remains `unverified`; only citations resolved from the Legal Knowledge Base are stored as `verified`. No model-generated law or citation is promoted automatically.
+- Semantic retrieval is explicitly `blocked_vectorize_not_authorized`; D1 FTS5 remains operational. Vectorize, R2, Queue and Workflow adapters are future boundaries only, and no paid resource was created.
+
+### 19.2 Database, ingestion and update engine
+
+Migrations `0009_legal_knowledge_base.sql` and `0010_seed_verified_legal_sources.sql` add strict/indexed tables for sources, documents, versions, provisions, relations, ingestion runs, change events and quarantine, plus a trigger-maintained D1 FTS5 index. Foreign keys, one-current-version uniqueness, version date checks, source/external-ID uniqueness and provision path uniqueness are enforced.
+
+The initial verified import intentionally contains only **4 real official records**:
+
+| Official source | Imported record | Completeness |
+| --- | --- | --- |
+| [Lex.uz](https://lex.uz) | Oʻzbekiston Respublikasi Konstitutsiyasi, current 25.07.2026 version; verified 1, 2 and 15-moddalar | `partial` |
+| [Sud.uz](https://sud.uz/la/plenum-la/documents-civil-la/) | Oliy sud Plenumi civil-practice decisions №35/2020, №20/2024 and №18/2026 | `metadata_only` |
+
+The database therefore contains 2 sources, 4 documents, 4 verified versions, 6 indexed provisions/metadata rows and 2 completed manual ingestion runs. This is a functional verification corpus, **not the complete Uzbek legislation database**. Sud.uz listing entries are searchable only when `includeMetadata=true` and are never supplied as AI-grade legal text.
+
+Lex.uz and Sud.uz were checked as official sources. Lex.uz exposes official documents and RSS/update metadata, but an explicit bulk automated-ingestion permission/API contract was not established during this stage. Sud.uz public Plenum paths are available, but full-document extraction still requires a stable reviewed adapter. Accordingly, both sources use `manual_verified`, `auto_sync_enabled=0`; hourly and daily scheduler boundaries exist but safely skip remote fetching until access/format approval. No access restriction, robots rule or rate control is bypassed.
+
+### 19.3 API, administration and AI integration
+
+Authenticated user routes:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/legal/status` | Registry counts, FTS and semantic/ingestion availability |
+| GET | `/api/v1/legal/search` | Rate-limited verified FTS5 search with type, authority and effective-date filters |
+| GET | `/api/v1/legal/documents/:documentId` | One verified version effective at the requested date |
+| GET | `/api/v1/ai/legal-sources/status` | Stage 07 compatibility and verified-source availability |
+
+Administration below `/api/v1/admin/legal` requires an authenticated admin role plus recent TOTP. Source/run/quarantine reads allow `admin`; imports, reindex and quarantine decisions require `owner` or `super_admin`. Manual import accepts only bounded validated content for the registered exact HTTPS domain, computes hashes server-side and writes document/version/provisions/run atomically through D1 batch. It does not fetch arbitrary user-provided URLs.
+
+Search is server-side feature controlled by `legal_knowledge_search`; client headers cannot enable it. `legal_semantic_search` remains disabled. FTS input is normalized and each token is quoted before `MATCH`, so raw SQLite/FTS operators are never executed. Search is limited to 25 rows and 30 requests/account/minute.
+
+The Stage 07 generation pipeline retrieves legal context before credit estimation, includes that context in the billed provider input estimate, binds citation identity/version/provision into the AI request hash and stores verified citations after successful settlement. Missing relevant material produces an explicit “verified source not found” instruction rather than a fabricated legal answer.
+
+### 19.4 Testing, staging and operational evidence
+
+Final local quality gates:
+
+| Check | Result |
+| --- | ---: |
+| `pnpm format:check` | passed |
+| `pnpm lint` | passed |
+| `pnpm typecheck` | passed |
+| `pnpm db:validate` | passed, 10 ordered migrations |
+| `pnpm test:api` | passed: 87 tests |
+| `pnpm test:design` | passed: 15 tests |
+| `pnpm test:workflow` | passed: 4 tests |
+| `pnpm build` | passed: Worker dry run and Design Preview production build |
+| `pnpm security:secrets` | passed |
+| `pnpm audit --prod --audit-level=high` | passed, no known high/critical vulnerability |
+
+The new suite covers registry counts, verified citation shape, current/effective-date selection, metadata isolation, feature-flag enforcement, authentication/RBAC/TOTP import, exact-domain SSRF protection, FTS/SQL injection input, FTS triggers/reindex, migration tracking, foreign keys, unique current versions, semantic fail-closed state and all previous backend/design/deployment regressions.
+
+Staging migrations `0009` and `0010` are recorded on `yuristim-db-v3-staging`. Remote verification returned 2 sources, 4 documents, 4 verified versions, 6 provisions, 6 FTS rows, a real FTS match for Constitution 2-modda and zero foreign-key violations. The existing `yuristim-api-v3-staging` Worker was updated at <https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev>; no other Worker or D1 database was written. Deployment version, commit and real endpoint results are recorded in the Stage 08 draft PR.
+
+### 19.5 Blockers and Stage 09 readiness
+
+1. The full Constitution and the remaining codes, laws, presidential/cabinet acts and Plenum texts are not imported. A source-owner-approved API/feed/bulk-access method, parser fixtures, integrity sampling and operational rate policy are required before automatic population.
+2. Hourly change checks and daily synchronization are wired to bounded scheduled adapters but remote fetch is deliberately skipped while source `auto_sync_enabled=0`. This is not presented as completed continuous synchronization.
+3. Vectorize and an approved embedding provider are absent; semantic retrieval/reranking remains blocked. Lexical D1 FTS5, metadata filters and authority/effective-date ranking continue without it.
+4. R2 is unavailable for immutable raw snapshots and large source artifacts. Current verified text/hash/version rows fit D1, but this is not a substitute for the approved long-term evidence archive.
+5. Gemini connectivity, OpenAI credentials and provider pricing remain the accepted Stage 07 blockers. Legal retrieval works independently, while real Lite/Pro generation remains fail-closed under the existing prerequisites.
+
+Stage 09 Yurist topish can consume the shared official-source/citation contracts without changing Authentication, Financial Core or AI provider boundaries. This branch must remain unmerged until Owner review, and Stage 09 must not start before that approval.
