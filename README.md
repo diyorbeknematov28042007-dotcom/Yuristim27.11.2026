@@ -743,3 +743,7 @@ Real staging checks returned `/health` 200, D1-backed `/ready` 200, `/api/v1/sta
 5. Gemini connectivity, OpenAI credentials and provider pricing remain the accepted Stage 07 blockers. Legal retrieval works independently, while real Lite/Pro generation remains fail-closed under the existing prerequisites.
 
 Stage 09 Yurist topish can consume the shared official-source/citation contracts without changing Authentication, Financial Core or AI provider boundaries. This branch must remain unmerged until Owner review, and Stage 09 must not start before that approval.
+
+
+### Stage 08 — Owner acceptance
+Owner authorized proceeding to Stage 09 and acceptance of the partial Legal Knowledge Base foundation. PR #6 merged: `e49f65f9f964485ab81aafdba283734b1208d907`. Full legal corpus, authorized Lex.uz/Sud.uz bulk access and stable parsers, automatic ingestion/update, Vectorize/embeddings, R2 evidence archive and authenticated end-to-end tests remain open. Investigate authorized source access early; resolve production-critical coverage and verification before launch. Stage 07 blockers remain. Stage 09 Lawyer Directory may begin. No production authorization.
