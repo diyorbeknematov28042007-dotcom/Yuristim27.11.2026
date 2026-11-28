@@ -1,7 +1,7 @@
 import type { RuntimeConfig } from "@yuristim/config";
 import type { AuthenticatedPrincipal } from "@yuristim/security";
 
-export type Stage04Secrets = {
+export type AppSecrets = {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_OIDC_CLIENT_ID?: string;
   TELEGRAM_OIDC_CLIENT_SECRET?: string;
@@ -9,6 +9,11 @@ export type Stage04Secrets = {
   BOT_ADAPTER_SECRET?: string;
   AUTH_ENCRYPTION_KEY?: string;
   OWNER_TELEGRAM_ID?: string;
+  GEMINI_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  GEMINI_API_BASE_URL?: string;
+  OPENAI_API_BASE_URL?: string;
+  AI_OPS_PROBE_TOKEN?: string;
 };
 
 export type GatewayVariables = {
@@ -23,6 +28,6 @@ export type GatewayVariables = {
 };
 
 export type AppBindings = {
-  Bindings: Env & Stage04Secrets;
+  Bindings: Env & AppSecrets;
   Variables: GatewayVariables;
 };

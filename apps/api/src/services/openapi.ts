@@ -38,8 +38,9 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Yuristim Backend API",
-    version: "0.5.0",
-    description: "Development Stage 05 financial core, authentication and account contract.",
+    version: "0.7.0",
+    description:
+      "Development Stage 07 Yuristim AI, financial, authentication and account contract.",
   },
   servers: [
     {
@@ -302,6 +303,96 @@ export const openApiDocument = {
         operationId: "runFinancialReconciliation",
         security: [{ sessionCookie: [] }, { bearerSession: [] }],
         responses: { "201": response("Financial reconciliation result", { type: "object" }) },
+      },
+    },
+    "/api/v1/ai/models": {
+      get: {
+        operationId: "listAIModels",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "200": response("Lite and Pro availability without provider secrets", { type: "object" }),
+          "401": errorResponse("Authentication required"),
+        },
+      },
+    },
+    "/api/v1/ai/conversations": {
+      get: {
+        operationId: "listAIConversations",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Account-isolated AI conversations", { type: "object" }) },
+      },
+      post: {
+        operationId: "createAIConversation",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "201": response("AI conversation created", { type: "object" }),
+          "400": errorResponse("Invalid conversation options"),
+        },
+      },
+    },
+    "/api/v1/ai/conversations/{conversationId}/messages": {
+      post: {
+        operationId: "createAIMessage",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "path", name: "conversationId", required: true, schema: { type: "string" } },
+          { in: "header", name: "Idempotency-Key", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "201": response("AI result settled against Financial Core", { type: "object" }),
+          "402": errorResponse("Insufficient credits"),
+          "403": errorResponse("AI execution disabled"),
+          "503": errorResponse("Provider, pricing or usage unavailable"),
+        },
+      },
+    },
+    "/api/v1/ai/conversations/{conversationId}/stream": {
+      post: {
+        operationId: "streamAIMessage",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "path", name: "conversationId", required: true, schema: { type: "string" } },
+          { in: "header", name: "Idempotency-Key", required: true, schema: { type: "string" } },
+        ],
+        responses: {
+          "200": {
+            description: "SSE stream; final event records verified provider usage and settlement",
+            content: { "text/event-stream": { schema: { type: "string" } } },
+          },
+          "503": errorResponse("Provider or pricing unavailable"),
+        },
+      },
+    },
+    "/api/v1/ai/memory": {
+      get: {
+        operationId: "listAIMemories",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Consent-bound memories", { type: "object" }) },
+      },
+      post: {
+        operationId: "createAIMemory",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "201": response("Consent-bound memory created", { type: "object" }),
+          "400": errorResponse("Explicit consent missing"),
+        },
+      },
+    },
+    "/api/v1/ai/documents/upload": {
+      post: {
+        operationId: "uploadAIDocument",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "403": errorResponse("Private R2 storage is unavailable") },
+      },
+    },
+    "/api/v1/admin/ai/models": {
+      get: {
+        operationId: "listAdminAIModels",
+        security: [{ bearerSession: [] }],
+        responses: {
+          "200": response("Provider model registry", { type: "object" }),
+          "403": errorResponse("Admin role and recent TOTP required"),
+        },
       },
     },
   },

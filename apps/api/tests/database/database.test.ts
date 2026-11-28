@@ -38,6 +38,13 @@ describe("D1 foundation migrations", () => {
         "promo_codes",
         "referrals",
         "payment_intents",
+        "ai_model_registry",
+        "ai_prompt_versions",
+        "ai_conversations",
+        "ai_messages",
+        "ai_runs",
+        "ai_memories",
+        "ai_usage_events",
       ]),
     );
   });
@@ -53,6 +60,8 @@ describe("D1 foundation migrations", () => {
       "0004_seed_authentication_flags.sql",
       "0005_financial_core.sql",
       "0006_seed_financial_flags.sql",
+      "0007_yuristim_ai.sql",
+      "0008_seed_ai_foundation.sql",
     ]);
   });
 

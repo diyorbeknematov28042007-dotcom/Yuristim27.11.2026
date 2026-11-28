@@ -20,6 +20,9 @@ export default defineConfig({
             TELEGRAM_OIDC_CLIENT_ID: "synthetic-oidc-client",
             TELEGRAM_OIDC_CLIENT_SECRET: "synthetic-oidc-secret",
             TELEGRAM_OIDC_REDIRECT_URI: "https://example.test/auth/telegram/callback",
+            GEMINI_API_KEY: "synthetic-gemini-api-key-for-tests-only",
+            GEMINI_API_BASE_URL: "https://gemini.test/v1beta",
+            AI_OPS_PROBE_TOKEN: "synthetic-ops-probe-token-that-is-long-enough",
           },
         },
       };
