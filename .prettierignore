@@ -1,5 +1,0 @@
-pnpm-lock.yaml
-README.md
-dist/
-.wrangler/
-worker-configuration.d.ts
