@@ -98,11 +98,6 @@ const directoryQuerySchema = z.object({
   locale: localeSchema.default("uz"),
 });
 
-const principalId = (context: Parameters<Parameters<typeof Hono>[0]>[0]): never => {
-  throw new Error(String(context));
-};
-void principalId;
-
 const accountId = (context: {
   get(name: "principal"): { accountId: string } | undefined;
 }): string => {

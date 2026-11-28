@@ -1,0 +1,81 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development/stage-03-backend-foundation
+      - development/stage-04-authentication-account
+      - development/stage-05-financial-core
+      - development/stage-06-design-system
+      - development/stage-07-yuristim-ai
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+        with:
+          version: 11.25.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.11.1
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Validate migrations
+        run: pnpm db:validate && pnpm db:migrate:local
+
+      - name: Smoke-test local development server
+        run: |
+          pnpm dev > /tmp/yuristim-wrangler.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8787/health | grep --quiet '"success":true'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/yuristim-wrangler.log
+          exit 1
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      - name: Build Worker bundle
+        run: pnpm build
+
+      - name: Scan tracked files for known secret patterns
+        run: pnpm security:secrets
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=high
