@@ -19,7 +19,7 @@ systemRoutes.get("/status", (context) => {
     successResponse(
       {
         platform: "yuristim",
-        stage: "yuristim_ai",
+        stage: "legal_knowledge_base",
         status: "operational",
         environment: config.APP_ENV,
       },
@@ -64,6 +64,8 @@ systemRoutes.get("/config/public", async (context) => {
           referralRewards: flags.referral_rewards,
           creditPurchases: flags.credit_purchases,
           proSubscriptionPurchases: flags.pro_subscription_purchases,
+          legalKnowledgeSearch: flags.legal_knowledge_search,
+          legalSemanticSearch: flags.legal_semantic_search,
         },
       },
       context.get("requestId"),
@@ -91,6 +93,11 @@ systemRoutes.get("/services", async (context) => {
         services: [
           { id: "foundation", name: "Backend Foundation", status: "available" },
           { id: "financial", name: "Financial Core", status: "available" },
+          {
+            id: "legal-knowledge",
+            name: "Huquqiy bilimlar bazasi",
+            status: flags.legal_knowledge_search ? "available" : "disabled",
+          },
           {
             id: "yuristim-ai",
             name: "Yuristim AI",

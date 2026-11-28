@@ -22,7 +22,13 @@ import { adminFinancialRoutes } from "./routes/admin-financial";
 import { aiRoutes } from "./routes/ai";
 import { adminAIRoutes } from "./routes/admin-ai";
 import { opsAIRoutes } from "./routes/ops-ai";
-import { D1AIRepository, D1FinancialRepository } from "@yuristim/database";
+import { legalRoutes } from "./routes/legal";
+import { adminLegalRoutes } from "./routes/admin-legal";
+import {
+  D1AIRepository,
+  D1FinancialRepository,
+  D1LegalKnowledgeRepository,
+} from "@yuristim/database";
 import type { AppBindings } from "./types";
 
 export const app = new Hono<AppBindings>();
@@ -61,6 +67,8 @@ app.route("/api/v1/admin/financial", adminFinancialRoutes);
 app.route("/api/v1/ai", aiRoutes);
 app.route("/api/v1/admin/ai", adminAIRoutes);
 app.route("/api/v1/ops/ai", opsAIRoutes);
+app.route("/api/v1/legal", legalRoutes);
+app.route("/api/v1/admin/legal", adminLegalRoutes);
 
 const knownPaths = new Set([
   "/health",
@@ -123,6 +131,13 @@ const knownPaths = new Set([
   "/api/v1/admin/ai/prompts",
   "/api/v1/admin/ai/usage",
   "/api/v1/ops/ai/gemini/probe",
+  "/api/v1/legal/status",
+  "/api/v1/legal/search",
+  "/api/v1/admin/legal/sources",
+  "/api/v1/admin/legal/ingestion-runs",
+  "/api/v1/admin/legal/quarantine",
+  "/api/v1/admin/legal/imports",
+  "/api/v1/admin/legal/reindex",
 ]);
 
 app.notFound((context) => {
@@ -186,6 +201,16 @@ const scheduled = async (controller: ScheduledController, env: Env): Promise<voi
       timeoutMs: 30_000,
       signal: abortController.signal,
     }).expireTemporaryConversations(now.toISOString());
+    const legal = new D1LegalKnowledgeRepository(env.DB, {
+      timeoutMs: 30_000,
+      signal: abortController.signal,
+    });
+    if (controller.cron === "5 * * * *") {
+      await legal.scheduledCheck("hourly_check", now.toISOString());
+    }
+    if (controller.cron === "25 19 * * *") {
+      await legal.scheduledCheck("daily_sync", now.toISOString());
+    }
     if (controller.cron === "10 19 * * *") {
       try {
         const rates = await new CbuFxProvider().fetchLatest(["USD", "EUR", "RUB"], now);

@@ -24,6 +24,8 @@ const falseFlagSnapshot = (): FeatureFlagSnapshot => ({
   promo_redemption: false,
   referral_rewards: false,
   weekly_credit_grants: false,
+  legal_knowledge_search: false,
+  legal_semantic_search: false,
 });
 
 export class D1FeatureFlagRepository implements FeatureFlagRepository {
@@ -97,3 +99,4 @@ export * from "./account";
 export * from "./ai";
 export * from "./execution";
 export * from "./financial";
+export * from "./legal";
