@@ -1,6 +1,6 @@
 # Yuristim — Project Source
 
-> 28.11.2026 | Asosiy loyiha hujjati | Stage 03–05 Owner tomonidan tasdiqlangan; Stage 06 Owner auditi kutilmoqda.
+> 28.11.2026 | Asosiy loyiha hujjati | Stage 03–06 Owner tomonidan tasdiqlangan; Stage 07 implementatsiyasi davom etmoqda.
 
 Yuristim — O‘zbekiston uchun AI yordamidagi huquqiy ekotizim: veb-sayt, Telegram Mini App va Telegram bot, alohida web Admin Panel. Ushbu README yagona loyiha spetsifikatsiyasi va qarorlar reyestri. Loyiha egasi yakuniy qarorlarni tasdiqlaydi. Quyidagi matn tasdiqlangan qarorlarning konspekti, to‘liq suhbat stenogrammasi emas. 10.02–10.16 faqat umumiy darajada tasdiqlangan; batafsil texnik yechimlar implementatsiyada tekshiriladi.
 
@@ -164,7 +164,7 @@ Har bir bosqich faqat uning bo‘limidagi real test va deployment dalillari doir
 - [x] Telegram auth/account/session foundation; real credential integrations deferred.
 - [x] Financial Core and ledger tests; real payments remain disabled.
 - [x] Design System implementation and supplied asset technical audit; ownership/licence and browser visual audit remain pending.
-- [ ] AI Lite/Pro and legal knowledge/RAG.
+- [ ] AI Lite/Pro (Stage 07 implementatsiyasi davom etmoqda); legal knowledge/RAG Stage 08.
 - [ ] Lawyer directory and verification.
 - [ ] Research.
 - [ ] Eight interactive services and legal formula review.
@@ -598,3 +598,61 @@ Stage 07 can consume tokens, shared components, `Lite`/`Pro` model selection, co
 
 ### Stage 06 — Owner acceptance
 Owner approved Design System implementation. PR #4 merged into main: `94ff9ef82ca962c8d777ab401b13f9edb0f7f372`. Owner confirmed decision 079 dark palette as authoritative over conflicting 086 examples. Asset ownership/licence provenance remains pending and must be resolved before public distribution; Inter font integration deferred to Stage 12; real browser accessibility audit deferred to Stage 15; no public component preview deployment. Stage 07 Yuristim AI may begin. Comprehensive audit remains deferred per Owner direction.
+
+## 18. Development Stage 07 — Yuristim AI
+
+Status on 28.11.2026: **Partial — backend foundation and synthetic regression suite are complete; V3 staging migration, deployment and real Gemini probe are pending.** OpenAI credentials, approved provider pricing, R2 and a durable background queue are not available, so the affected capabilities remain fail-closed. Stage 08 has not started.
+
+### 18.1 Architecture and provider boundaries
+
+- `@yuristim/ai` owns provider-neutral request/result/stream contracts, prompt-injection guards, safe legal-response notices and the official REST adapters. `GeminiInteractionsAdapter` uses Google Gemini Interactions API with `store: false`; `OpenAIResponsesAdapter` uses OpenAI Responses API with `store: false`. Provider credentials are optional Worker secret bindings and are never read from repository files.
+- The only user-visible model names are `Lite` and `Pro`. D1 `ai_model_registry` maps them to Google and OpenAI provider model IDs, versioned maximum-output configuration, streaming state and Financial Core price keys. Admin model changes require Owner role plus recent TOTP. Free/Pro tariff state never changes model eligibility: credit, technical limits and provider readiness are evaluated separately.
+- `apps/api/src/services/ai.ts` executes the guarded pipeline: authenticated active account → account-owned conversation → feature/model/provider checks → conservative unit estimate → Stage 05 credit reservation → provider call or SSE → provider-reported usage → idempotent settlement → history/usage event. Missing pricing, secret or usage fails closed. An uncertain provider outcome is marked `reconciliation_required`; the reservation is retained until reconciliation/expiry rather than silently releasing possibly incurred cost.
+- Legal answers are always returned as `unverified`, with an explicit caution and an empty verified-citation collection. Stage 07 does not promote model-generated citations. Verified citations and authoritative retrieval remain the Stage 08 Legal Knowledge Base contract.
+- Provider tools are not passed through from users. The tool registry response lists document analysis/comparison as blocked by storage, legal lookup as Stage 08 pending and Deep Research as Stage 10 pending. Durable background execution is blocked until Queue/Workflow billing and architecture are authorized.
+
+### 18.2 D1 migrations and data isolation
+
+Migrations `0007_yuristim_ai.sql` and `0008_seed_ai_foundation.sql` introduce strict, indexed tables for model registry, prompt versions, conversations, messages, idempotent runs, consent-bound memories, tool progress, document/version metadata, citations and append-only usage events. All user records include `account_id`; repository queries require both account and object identifiers to prevent cross-account access. Temporary conversations receive a 24-hour deletion deadline and the hourly Worker task redacts message content before soft deletion.
+
+The seed enables the guarded AI execution flag and registers current configurable provider model IDs, but **does not seed provider pricing**. Real user generations therefore remain closed until Owner-approved Gemini/OpenAI price items and verified currency inputs are activated through Financial Core. No fake price, credit, revenue, citation or provider result is created.
+
+### 18.3 API surface
+
+All routes below are under `/api/v1`, use the standard response envelope and default-deny authentication unless explicitly marked as an operational probe.
+
+| Method | Route | State |
+| --- | --- | --- |
+| GET/POST | `/ai/conversations` | List/search and create Lite/Pro, temporary or persistent conversations |
+| GET/PATCH/DELETE | `/ai/conversations/:conversationId` | History, rename, archive, memory preference and soft deletion |
+| POST | `/ai/conversations/:conversationId/messages` | Non-stream generation with idempotency and financial settlement |
+| POST | `/ai/conversations/:conversationId/stream` | SSE delta/stop/error/completion contract with final settlement |
+| PATCH/POST | `/ai/conversations/:conversationId/messages/:messageId` and `/regenerate` | User edit version and controlled regeneration |
+| POST | `/ai/runs/:runId/stop` | Persisted cancellation request; stream polls and cancels provider reading |
+| GET/POST/DELETE | `/ai/memory` | Explicit-consent persistent memory and user deletion |
+| GET | `/ai/models`, `/ai/tools`, `/ai/voice/capabilities`, `/ai/legal-sources/status` | Safe capability discovery without secrets or fake availability |
+| POST | `/ai/documents/create` | D1 draft/version foundation; export remains blocked |
+| POST | `/ai/documents/upload`, `/ai/documents/:id/export` | Fail-closed while private R2 is unavailable |
+| GET/PATCH/POST | `/admin/ai/*` | TOTP/RBAC model registry, prompts, usage and emergency disable |
+| POST | `/ops/ai/gemini/probe` | Staging-only, fixed-content, separately secret-authenticated and rate-limited real provider health probe; not a user auth bypass |
+
+### 18.4 Security and privacy
+
+- Sessions, CSRF, active-account checks, request-body limits and CORS from Stage 03–04 are preserved. AI generation adds per-account D1 rate limits and requires an `Idempotency-Key` before any external execution.
+- High-risk prompt-injection patterns are rejected server-side. Provider tools are absent from ordinary Lite/Pro requests, so user content cannot authorize arbitrary execution. Conversation/message/memory queries are account-scoped and cross-tenant access returns not found.
+- Provider responses use a 25-second abort signal. SSE supports client disconnect, provider cancellation and persisted stop requests; because a remote provider may already have incurred cost before cancellation, unknown-usage runs are held for reconciliation. D1 timeouts retain the Stage 03 limitation: they bound Worker waiting but cannot guarantee cancellation of an already accepted remote database operation.
+- Prompts, document contents, conversation contents, authorization headers, Telegram data and API keys are excluded from structured logs. OpenAI and Gemini request persistence is disabled. Emergency model disable requires Owner + TOTP and writes a security event containing only a reason hash.
+
+### 18.5 Testing and operational state
+
+Local Cloudflare Workers tests currently report **72 passed, 0 failed** before the staging deployment pass. The suite covers official provider request privacy, provider-secret fail-closed behavior, prompt-injection rejection, authentication, CSRF, tenant isolation, conversation lifecycle/search, explicit memory consent/deletion, Pro without OpenAI, Lite reservation/usage/settlement/idempotency, SSE final settlement, the protected operational probe boundary, blocked R2 upload, migrations, constraints, append-only records and all previous Auth/Financial regressions. MSW Cloudflare outbound mocks are synthetic and are not described as real Gemini/OpenAI results.
+
+V3 resource audit reconfirmed Worker `yuristim-api-v3-staging` and D1 `yuristim-db-v3-staging`; all previous Workers and D1 databases remain unchanged. R2 still returns Cloudflare code `10042` and was not enabled. No Queue, Workflow, Vectorize or paid monitoring resource was created.
+
+### 18.6 Blockers and Stage 08 readiness
+
+1. OpenAI API key is absent; Pro architecture is implemented but provider execution remains fail-closed.
+2. Owner-approved provider prices are absent; real user AI calls cannot create a financially valid reservation yet. The isolated operational Gemini probe does not create user credits or revenue and is used only for the explicitly authorized staging connectivity check.
+3. R2 is disabled, so PDF/DOCX/DOC/TXT/image upload, OCR inputs and PDF/DOCX export cannot be enabled. Existing D1 text-draft/version metadata is not a substitute for private file storage.
+4. Durable background jobs require Queue/Workflow authorization; no paid resource was enabled. Voice adapters expose a closed capability contract until a provider/security/cost decision is approved.
+5. Stage 08 can consume the model/prompt registry, account-isolated chat context, citation verification states and legal-source status contract. Stage 08 must not begin until Stage 07 Owner review and merge.

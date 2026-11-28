@@ -8,6 +8,7 @@ on:
       - development/stage-04-authentication-account
       - development/stage-05-financial-core
       - development/stage-06-design-system
+      - development/stage-07-yuristim-ai
 
 permissions:
   contents: read
