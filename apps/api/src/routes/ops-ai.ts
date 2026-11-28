@@ -47,7 +47,9 @@ opsAIRoutes.post("/gemini/probe", async (context) => {
     systemPrompt: "Return only the exact operational health token requested by the user.",
     messages: [{ role: "user", content: "Return exactly: YURISTIM_LITE_OK" }],
     maxOutputTokens: 16,
-    signal: AbortSignal.any([context.req.raw.signal, AbortSignal.timeout(15_000)]),
+    // Provider cold starts can exceed the ordinary user-path budget. This probe is
+    // separately authenticated, rate-limited and has no financial side effects.
+    signal: AbortSignal.any([context.req.raw.signal, AbortSignal.timeout(45_000)]),
   });
   if (result.text.trim() !== "YURISTIM_LITE_OK") {
     throw new AppError("SERVICE_UNAVAILABLE", "Lite provider returned an unexpected probe result");
