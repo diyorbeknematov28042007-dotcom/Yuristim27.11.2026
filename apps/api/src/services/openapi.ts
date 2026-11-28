@@ -38,9 +38,9 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Yuristim Backend API",
-    version: "0.8.0",
+    version: "0.9.0",
     description:
-      "Development Stage 08 verified legal knowledge, Yuristim AI, financial, authentication and account contract.",
+      "Development Stage 09 verified lawyer directory, moderation, legal knowledge, AI, financial, authentication and account contract.",
   },
   servers: [
     {
@@ -462,6 +462,149 @@ export const openApiDocument = {
         responses: {
           "200": response("D1 FTS5 index rebuilt", { type: "object" }),
           "403": errorResponse("Owner or super-admin with recent TOTP required"),
+        },
+      },
+    },
+    "/api/v1/lawyers/specializations": {
+      get: {
+        operationId: "listLawyerSpecializations",
+        parameters: [{ in: "query", name: "locale", schema: { type: "string", enum: ["uz", "ru", "en"] } }],
+        responses: { "200": response("Approved 20-specialization registry", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/directory": {
+      get: {
+        operationId: "searchLawyerDirectory",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "200": response("Verified active professionals only", { type: "object" }),
+          "401": errorResponse("Authentication required"),
+          "429": errorResponse("Directory rate limit exceeded"),
+        },
+      },
+    },
+    "/api/v1/lawyers/directory/{profileId}": {
+      get: {
+        operationId: "getPublicLawyerProfile",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [{ in: "path", name: "profileId", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": response("Redacted verified professional profile", { type: "object" }),
+          "404": errorResponse("Profile is not verified and active"),
+        },
+      },
+    },
+    "/api/v1/lawyers/recommendations": {
+      post: {
+        operationId: "recommendExistingLawyers",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        description: "Registry-bound deterministic fallback; never invents professionals. AI reranking remains fail-closed.",
+        responses: { "200": response("Existing verified professional recommendations", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/professional/registration": {
+      post: {
+        operationId: "registerProfessionalProfile",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "201": response("Draft professional profile created", { type: "object" }),
+          "409": errorResponse("Professional profile already exists"),
+        },
+      },
+    },
+    "/api/v1/lawyers/professional/profile": {
+      get: {
+        operationId: "getOwnProfessionalProfile",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Private own professional profile", { type: "object" }) },
+      },
+      patch: {
+        operationId: "updateOwnProfessionalProfile",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Profile updated; critical changes require reverification", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/professional/verification/submit": {
+      post: {
+        operationId: "submitProfessionalVerification",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "201": response("Manual verification case submitted", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/professional/verification/documents": {
+      post: {
+        operationId: "uploadProfessionalVerificationDocument",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "403": errorResponse("Private R2 storage is unavailable") },
+      },
+    },
+    "/api/v1/lawyers/favorites/{profileId}": {
+      put: {
+        operationId: "addLawyerFavorite",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Favorite added idempotently", { type: "object" }) },
+      },
+      delete: {
+        operationId: "removeLawyerFavorite",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Favorite removed idempotently", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/directory/{profileId}/contact": {
+      post: {
+        operationId: "recordLawyerContactClick",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        parameters: [
+          { in: "path", name: "profileId", required: true, schema: { type: "string" } },
+          { in: "header", name: "Idempotency-Key", required: true, schema: { type: "string" } },
+        ],
+        responses: { "201": response("Contact click recorded; service not confirmed", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/directory/{profileId}/reviews": {
+      get: {
+        operationId: "listLawyerReviews",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "200": response("Published reviews and professional replies", { type: "object" }) },
+      },
+      post: {
+        operationId: "createLawyerReview",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: {
+          "201": response("One active review created after contact evidence", { type: "object" }),
+          "403": errorResponse("Self-review or missing contact evidence"),
+          "409": errorResponse("Duplicate active review"),
+        },
+      },
+    },
+    "/api/v1/lawyers/complaints": {
+      post: {
+        operationId: "createLawyerComplaint",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "201": response("Moderation complaint created", { type: "object" }) },
+      },
+    },
+    "/api/v1/lawyers/appeals": {
+      post: {
+        operationId: "createLawyerModerationAppeal",
+        security: [{ sessionCookie: [] }, { bearerSession: [] }],
+        responses: { "201": response("Professional appeal created", { type: "object" }) },
+      },
+    },
+    "/api/v1/admin/lawyers/verifications": {
+      get: {
+        operationId: "listLawyerVerificationQueue",
+        security: [{ bearerSession: [] }],
+        responses: { "200": response("Private verification queue", { type: "object" }) },
+      },
+    },
+    "/api/v1/admin/lawyers/moderation/actions": {
+      post: {
+        operationId: "moderateLawyerProfileOrReview",
+        security: [{ bearerSession: [] }],
+        responses: {
+          "201": response("Append-only moderation action recorded", { type: "object" }),
+          "403": errorResponse("RBAC and recent TOTP required"),
         },
       },
     },

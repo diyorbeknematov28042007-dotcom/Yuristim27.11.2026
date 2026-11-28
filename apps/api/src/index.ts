@@ -24,6 +24,8 @@ import { adminAIRoutes } from "./routes/admin-ai";
 import { opsAIRoutes } from "./routes/ops-ai";
 import { legalRoutes } from "./routes/legal";
 import { adminLegalRoutes } from "./routes/admin-legal";
+import { lawyerRoutes } from "./routes/lawyers";
+import { adminLawyerRoutes } from "./routes/admin-lawyers";
 import {
   D1AIRepository,
   D1FinancialRepository,
@@ -69,6 +71,8 @@ app.route("/api/v1/admin/ai", adminAIRoutes);
 app.route("/api/v1/ops/ai", opsAIRoutes);
 app.route("/api/v1/legal", legalRoutes);
 app.route("/api/v1/admin/legal", adminLegalRoutes);
+app.route("/api/v1/lawyers", lawyerRoutes);
+app.route("/api/v1/admin/lawyers", adminLawyerRoutes);
 
 const knownPaths = new Set([
   "/health",
@@ -138,6 +142,22 @@ const knownPaths = new Set([
   "/api/v1/admin/legal/quarantine",
   "/api/v1/admin/legal/imports",
   "/api/v1/admin/legal/reindex",
+  "/api/v1/lawyers/specializations",
+  "/api/v1/lawyers/directory",
+  "/api/v1/lawyers/recommendations",
+  "/api/v1/lawyers/professional/registration",
+  "/api/v1/lawyers/professional/profile",
+  "/api/v1/lawyers/professional/verification/submit",
+  "/api/v1/lawyers/professional/verification/documents",
+  "/api/v1/lawyers/professional/cabinet",
+  "/api/v1/lawyers/favorites",
+  "/api/v1/lawyers/complaints",
+  "/api/v1/lawyers/appeals",
+  "/api/v1/admin/lawyers/verifications",
+  "/api/v1/admin/lawyers/complaints",
+  "/api/v1/admin/lawyers/appeals",
+  "/api/v1/admin/lawyers/moderation/actions",
+  "/api/v1/admin/lawyers/statistics",
 ]);
 
 app.notFound((context) => {

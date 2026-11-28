@@ -26,6 +26,8 @@ const falseFlagSnapshot = (): FeatureFlagSnapshot => ({
   weekly_credit_grants: false,
   legal_knowledge_search: false,
   legal_semantic_search: false,
+  lawyer_directory: false,
+  lawyer_recommendations: false,
 });
 
 export class D1FeatureFlagRepository implements FeatureFlagRepository {
@@ -100,3 +102,4 @@ export * from "./ai";
 export * from "./execution";
 export * from "./financial";
 export * from "./legal";
+export * from "./lawyer";

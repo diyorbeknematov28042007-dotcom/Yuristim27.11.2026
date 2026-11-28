@@ -19,7 +19,7 @@ systemRoutes.get("/status", (context) => {
     successResponse(
       {
         platform: "yuristim",
-        stage: "legal_knowledge_base",
+        stage: "lawyer_directory",
         status: "operational",
         environment: config.APP_ENV,
       },
@@ -66,6 +66,8 @@ systemRoutes.get("/config/public", async (context) => {
           proSubscriptionPurchases: flags.pro_subscription_purchases,
           legalKnowledgeSearch: flags.legal_knowledge_search,
           legalSemanticSearch: flags.legal_semantic_search,
+          lawyerDirectory: flags.lawyer_directory,
+          lawyerRecommendations: flags.lawyer_recommendations,
         },
       },
       context.get("requestId"),
@@ -115,7 +117,7 @@ systemRoutes.get("/services", async (context) => {
             name: "Yuridik izlanish",
             status: flags.research_execution ? "coming_soon" : "disabled",
           },
-          { id: "lawyers", name: "Yurist topish", status: "coming_soon" },
+          { id: "lawyers", name: "Yurist topish", status: flags.lawyer_directory ? "available" : "disabled" },
           { id: "interactive", name: "Interaktiv xizmatlar", status: "coming_soon" },
           {
             id: "documents",

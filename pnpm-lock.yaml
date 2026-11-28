@@ -98,6 +98,9 @@ importers:
       '@yuristim/knowledge':
         specifier: workspace:*
         version: link:../../packages/knowledge
+      '@yuristim/lawyer':
+        specifier: workspace:*
+        version: link:../../packages/lawyer
       '@yuristim/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -162,6 +165,9 @@ importers:
       '@yuristim/knowledge':
         specifier: workspace:*
         version: link:../knowledge
+      '@yuristim/lawyer':
+        specifier: workspace:*
+        version: link:../lawyer
 
   packages/design-tokens: {}
 
@@ -172,6 +178,8 @@ importers:
       '@yuristim/errors':
         specifier: workspace:*
         version: link:../errors
+
+  packages/lawyer: {}
 
   packages/logger: {}
 

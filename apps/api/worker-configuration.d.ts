@@ -3,7 +3,7 @@
 interface __BaseEnv_Env {
 	DB: D1Database;
 	APP_ENV: "staging";
-	APP_VERSION: "0.5.0";
+	APP_VERSION: "0.9.0";
 	API_VERSION: "v1";
 	PUBLIC_BASE_URL: "https://yuristim-api-v3-staging.diyorbeknematov28042007.workers.dev";
 	CORS_ALLOWLIST: "";
