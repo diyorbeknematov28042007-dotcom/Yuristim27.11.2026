@@ -661,3 +661,7 @@ V3 resource audit reconfirmed Worker `yuristim-api-v3-staging` and D1 `yuristim-
 4. R2 is disabled, so PDF/DOCX/DOC/TXT/image upload, OCR inputs and PDF/DOCX export cannot be enabled. Existing D1 text-draft/version metadata is not a substitute for private file storage.
 5. Durable background jobs require Queue/Workflow authorization; no paid resource was enabled. Voice adapters expose a closed capability contract until a provider/security/cost decision is approved.
 6. Stage 08 can consume the model/prompt registry, account-isolated chat context, citation verification states and legal-source status contract. Stage 08 must not begin until Stage 07 Owner review and merge.
+
+
+### Stage 07 — Owner acceptance
+Owner approved the partial AI backend implementation. PR #5 merged into main: `debdde7c56f7d2396b167e74b407cb3cd0c0f9ed`. Gemini operational timeout, OpenAI credentials and verified provider pricing deferred to Stage 15; R2, document analysis/creation and voice execution to be completed by Stage 15; Queue/Workflow activation as needed in later stages subject to authorization. Real user AI execution remains disabled until prerequisites are verified. Stage 08 Legal Knowledge Base may begin. No production authorization; comprehensive audit deferred per Owner direction.
