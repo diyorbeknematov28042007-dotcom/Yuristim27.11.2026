@@ -64,6 +64,9 @@ type GoogleInteraction = {
   id?: unknown;
   steps?: Array<{ type?: unknown; content?: Array<{ type?: unknown; text?: unknown }> }>;
   usage?: {
+    total_input_tokens?: unknown;
+    total_output_tokens?: unknown;
+    total_thought_tokens?: unknown;
     input_tokens?: unknown;
     output_tokens?: unknown;
     total_tokens?: unknown;
@@ -99,9 +102,9 @@ export class GeminiInteractionsAdapter implements AIProviderAdapter {
       system_instruction: request.systemPrompt,
       input: request.messages.map((message) => ({
         type: message.role === "user" ? "user_input" : "model_output",
-        content: [{ type: "text", text: message.content }],
+        content: message.content,
       })),
-      generation_config: { max_output_tokens: request.maxOutputTokens },
+      generation_config: { max_output_tokens: request.maxOutputTokens, thinking_level: "low" },
       stream,
       store: false,
     });
@@ -121,14 +124,18 @@ export class GeminiInteractionsAdapter implements AIProviderAdapter {
     const body = (await response.json()) as GoogleInteraction;
     const text = googleText(body);
     if (text.length === 0) throw providerError(this.provider);
-    const inputUnits = usageNumber(body.usage?.input_tokens ?? body.usage?.inputTokenCount);
-    const outputUnits = usageNumber(body.usage?.output_tokens ?? body.usage?.outputTokenCount);
+    const inputUnits = usageNumber(
+      body.usage?.total_input_tokens ?? body.usage?.input_tokens ?? body.usage?.inputTokenCount,
+    );
+    const reportedOutputUnits =
+      usageNumber(body.usage?.total_output_tokens ?? body.usage?.output_tokens) +
+      usageNumber(body.usage?.total_thought_tokens);
     const totalUnits = usageNumber(body.usage?.total_tokens);
     return {
       text,
       providerResponseId: limitedText(body.id) || null,
-      inputUnits: inputUnits + outputUnits > 0 ? inputUnits : totalUnits,
-      outputUnits,
+      inputUnits,
+      outputUnits: totalUnits > inputUnits ? totalUnits - inputUnits : reportedOutputUnits,
     };
   }
 
@@ -293,16 +300,18 @@ export const parseProviderSseEvent = (provider: ProviderName, data: string): Str
     if (type === "interaction.completed") {
       const interaction = (body.interaction ?? body) as GoogleInteraction;
       const inputUnits = usageNumber(
-        interaction.usage?.input_tokens ?? interaction.usage?.inputTokenCount,
+        interaction.usage?.total_input_tokens ??
+          interaction.usage?.input_tokens ??
+          interaction.usage?.inputTokenCount,
       );
-      const outputUnits = usageNumber(
-        interaction.usage?.output_tokens ?? interaction.usage?.outputTokenCount,
-      );
+      const reportedOutputUnits =
+        usageNumber(interaction.usage?.total_output_tokens ?? interaction.usage?.output_tokens) +
+        usageNumber(interaction.usage?.total_thought_tokens);
       const totalUnits = usageNumber(interaction.usage?.total_tokens);
       return {
         type: "usage",
-        inputUnits: inputUnits + outputUnits > 0 ? inputUnits : totalUnits,
-        outputUnits,
+        inputUnits,
+        outputUnits: totalUnits > inputUnits ? totalUnits - inputUnits : reportedOutputUnits,
         providerResponseId: limitedText(interaction.id) || null,
       };
     }

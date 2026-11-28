@@ -24,6 +24,8 @@ describe("AI provider adapters", () => {
       expect(new Headers(init?.headers).get("x-goog-api-key")).toBe("synthetic-secret-key-value");
       expect(JSON.parse(body)).toMatchObject({
         system_instruction: "Synthetic system instruction for tests",
+        input: [{ type: "user_input", content: "Synthetic legal question" }],
+        generation_config: { max_output_tokens: 32, thinking_level: "low" },
         store: false,
         stream: false,
       });
@@ -34,7 +36,7 @@ describe("AI provider adapters", () => {
             steps: [
               { type: "model_output", content: [{ type: "text", text: "Synthetic response" }] },
             ],
-            usage: { input_tokens: 12, output_tokens: 4 },
+            usage: { total_input_tokens: 12, total_output_tokens: 3, total_thought_tokens: 1 },
           }),
           { headers: { "content-type": "application/json" } },
         ),

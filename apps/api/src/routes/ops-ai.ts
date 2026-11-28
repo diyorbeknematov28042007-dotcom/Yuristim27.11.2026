@@ -46,7 +46,7 @@ opsAIRoutes.post("/gemini/probe", async (context) => {
     modelId: model.providerModelId,
     systemPrompt: "Return only the exact operational health token requested by the user.",
     messages: [{ role: "user", content: "Return exactly: YURISTIM_LITE_OK" }],
-    maxOutputTokens: 16,
+    maxOutputTokens: 128,
     // Provider cold starts can exceed the ordinary user-path budget. This probe is
     // separately authenticated, rate-limited and has no financial side effects.
     signal: AbortSignal.any([context.req.raw.signal, AbortSignal.timeout(45_000)]),

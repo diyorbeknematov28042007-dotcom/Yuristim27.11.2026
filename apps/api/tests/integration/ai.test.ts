@@ -51,7 +51,7 @@ describe("Yuristim AI API", () => {
         HttpResponse.json({
           id: "synthetic_probe",
           steps: [{ type: "model_output", content: [{ type: "text", text: "YURISTIM_LITE_OK" }] }],
-          usage: { input_tokens: 6, output_tokens: 2 },
+          usage: { total_input_tokens: 6, total_output_tokens: 2, total_tokens: 8 },
         }),
       ),
     );
@@ -147,7 +147,7 @@ describe("Yuristim AI API", () => {
               content: [{ type: "text", text: "Synthetic legal explanation" }],
             },
           ],
-          usage: { input_tokens: 12, output_tokens: 8 },
+          usage: { total_input_tokens: 12, total_output_tokens: 8, total_tokens: 20 },
         }),
       ),
     );
@@ -215,7 +215,7 @@ describe("Yuristim AI API", () => {
             [
               'event: step.delta\ndata: {"event_type":"step.delta","delta":{"type":"text","text":"Synthetic "}}\n\n',
               'event: step.delta\ndata: {"event_type":"step.delta","delta":{"type":"text","text":"stream"}}\n\n',
-              'event: interaction.completed\ndata: {"event_type":"interaction.completed","interaction":{"id":"stream_1","usage":{"input_tokens":10,"output_tokens":5}}}\n\n',
+              'event: interaction.completed\ndata: {"event_type":"interaction.completed","interaction":{"id":"stream_1","usage":{"total_input_tokens":10,"total_output_tokens":5,"total_tokens":15}}}\n\n',
             ].join(""),
             { headers: { "content-type": "text/event-stream" } },
           ),
